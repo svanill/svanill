@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+
+html {
+    background-color: #cad8d9;
+}
+
+body {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 1em;
+    margin: 0 auto;
+}
+
+input[type=checkbox] {
+    margin: 0;
+}
+
+fieldset {
+    margin: 0;
+    padding: 1em;
+    border: 0;
+}
+
+legend {
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+}
+
+.main-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.options-container {
+    display: flex;
+    flex: 1 1 100%;
+    align-items: center;
+    flex-wrap: wrap;
+    flex-direction: column;
+}
+
+.pbkdf2-options {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+}
+
+.pbkdf2-salt-line {
+    display: flex;
+    flex: 1 1 100%;
+    align-items: center;
+}
+
+.pbkdf2-salt-line > input{
+    flex: 1;
+}
+
+.pbkdf2-iterations-line {
+    display: flex;
+    flex: 1 1 100%;
+    align-items: center;
+}
+
+.pbkdf2-iterations-line > input{
+    flex: 1;
+}
+
+
+.informations {
+    display: block;
+    flex: 1 1 100%;
+    margin-top: 1em;
+}
+
+.secret-container {
+    display: flex;
+    align-items: center;
+}
+
+.iv-container {
+    display: flex;
+    flex: 1 1 100%;
+    flex-direction: row;
+    align-items: center;
+}
+
+.iv-container > label {
+    margin-right: 1em;
+}
+
+#secret {
+    box-sizing: border-box;
+    padding: 0 0.2em;
+    width: 30em;
+    margin-right: 0.2em;
+}
+
+label {
+    cursor: pointer;
+}
+
+#show-secret {
+    display: none;
+}
+
+#show-secret:checked + label{
+    color: red;
+}
+
+textarea, button {
+    box-sizing: border-box;
+}
+
+input[type=text], input[type=password] {
+    padding: 0 0.3em;
+}
+
+.plaintext-container, .ciphertext-container {
+    display: flex;
+    flex: 1 1 35%;
+    flex-direction: column;
+    align-items: center;
+}
+
+#plaintext, #ciphertext {
+    min-height: 400px;
+    width: 90%;
+}
+
+.error {
+    color: red;
+}
+
+span.error:empty:before {
+    content: "\200b"; /* unicode zero width space character */
+}
+
+.advanced-options {
+    display: flex;
+    flex: 1 1 100%;
+    margin-top: 1em;
+    flex-direction: column;
+    align-items: center;
+}
+
+.advanced-options .content {
+    transition: max-height 0.4s ease-out;
+    max-height: 0;
+    opacity: 1;
+    overflow: hidden;
+}
+
+.advanced-options.is-active .content {
+    max-height: 300px;
+    opacity: 1;
+}
+
+.advanced-options .toggle-icon {
+    transition: transform 0.4s;
+    display: inline-block;
+}
+
+.advanced-options.is-active .toggle-icon {
+    transform: rotate(90deg);
+}
+
+.advanced-options-legend {
+    cursor: pointer;
+}
+
+.field-name {
+    display: flex;
+    flex: 0.2;
+}
+
+.load-save {
+    display: flex;
+}
+
+</style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="options-container">
+        <span class="secret-container">
+            <label>Password <input id="secret" type="password" class="change-ciphertext" /></label>
+            <input
+                id="show-secret"
+                type="checkbox"
+                onchange="document.getElementById('secret').type = this.checked ? 'text' : 'password'"
+                title="Show password"
+            />
+            <label for="show-secret">👁</label>
+        </span>
+
+    </div>
+    <div class="plaintext-container">
+        <h2>Plaintext</h2>
+        <span id="plaintext-error-message" class="error"></span>
+        <textarea id="plaintext"></textarea>
+    </div>
+    <div class="ciphertext-container">
+        <h2>Ciphertext</h2>
+        <span id="ciphertext-error-message" class="error"></span>
+        <textarea id="ciphertext"></textarea>
+    </div>
+
+    <div class="load-save">
+        <div class="save-container">
+            <div class="save-choice-row">Load/Save to dropbox
+            <input id="dropbox-access-token" type="text" placeholder="Access token...">
+            <button id="dropbox-load-btn">Load</button>
+            <button id="dropbox-save-btn">Save</button></div>
+        </div>
+    </div>
+
+    <fieldset class="advanced-options">
+        <legend class="advanced-options-legend"><span class="toggle-icon">▶</span> Advanced options</legend>
+
+        <div class="content">
+
+            <fieldset>
+                <legend>Key derivation function - PBKDF2</legend>
+                <div class="pbkdf2-options">
+                    <label class="pbkdf2-salt-line">
+                        <span class="field-name">Salt</span>
+                        <input id="pbkdf2-salt" type="text" value="vanillacrypto" class="change-ciphertext" />
+                    </label>
+                    <label class="pbkdf2-iterations-line">
+                        <span class="field-name">Iterations</span>
+                        <input id="pbkdf2-iterations" type="text" value="60000" class="change-ciphertext" />
+                    </label>
+                </div>
+
+                <span class="derived-key">Derived key</span>
+                <input id="derived-key" type="password" disabled class="value change-ciphertext" />
+                <input
+                    id="show-derived-key"
+                    type="checkbox"
+                    onchange="document.getElementById('derived-key').type = this.checked ? 'text' : 'password'"
+                    title="Show derived key"
+                />
+                <label for="show-derived-key">👁</label>
+            </fieldset>
+
+            <fieldset>
+                <legend>Encryption</legend>
+                <div class="iv-options">
+                    <label>
+                        <input type="checkbox" id="prefix-iv" checked class="change-ciphertext" />
+                        Prefix ciphertext with IV
+                    </label>
+                    <span class="iv-container">
+                        <label>IV
+                            <input
+                                id="iv"
+                                type="text"
+                                placeholder="IV (initialization vector)"
+                                disabled
+                                value="00000000000000000000000000000000"
+                                class="change-ciphertext"
+                            />
+                        </label>
+                        <input
+                            id="iv-is-random"
+                            type="checkbox"
+                            checked
+                            onchange="document.getElementById('iv').disabled = this.checked"
+                            class="change-ciphertext"
+                        />
+                        <label for="iv-is-random">Randomize before encrypt</label>
+                    </span>
+                </div>
+            </fieldset>
+        </div>
+
+    </fieldset>
+</div>
+
+<script>
+
+    function stringToUint8Array(text) {
+        return new TextEncoder().encode(text);
+    }
+
+    function bufToString(arr) {
+        return new TextDecoder().decode(arr);
+    }
+
+    function buf2hex(bufferSource) {
+    return Array.prototype.map.call(new Uint8Array(bufferSource), x => ('00' + x.toString(16)).slice(-2)).join('');
+    }
+
+    function hexToUint8Array(hex) {
+        for (var bytes = [], c = 0; c < hex.length; c += 2)
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+        return new Uint8Array(bytes);
+    }
+
+    function willGenerateKeyPBKDF2(secret) {
+        return crypto.subtle.importKey(
+            'raw',
+            stringToUint8Array(secret),
+            { name: 'PBKDF2' },
+            false,
+            [ 'deriveBits', 'deriveKey' ]
+        );
+    }
+
+    function willDeriveKey(baseKey, saltString, iterations, canBeExtracted) {
+        return crypto.subtle.deriveKey(
+            {
+                name: 'PBKDF2',
+                salt: stringToUint8Array(saltString),
+                iterations: iterations,
+                hash: 'SHA-256'
+            },
+            baseKey,
+            { "name": 'AES-CBC', "length": 256 },
+            Boolean(canBeExtracted),
+            [ "encrypt", "decrypt" ]
+        );
+    }
+
+    function willGeneratePBKDF2KeyAsHexString(secret, salt, iterations) {
+        return willGenerateKeyPBKDF2(secret)
+        .then(function (baseKey) {
+            return willDeriveKey(baseKey, salt, iterations, true);
+        })
+        .then(function (derivedKey) {
+            return crypto.subtle.exportKey('raw', derivedKey);
+        })
+        .then(function (buffer) {
+            return buf2hex(buffer);
+        });
+    }
+
+    function willEncryptAES256(key, iv, plaintext) {
+        return crypto.subtle.encrypt(
+            {
+                name: 'AES-CBC',
+                iv: iv,
+            },
+            key,
+            stringToUint8Array(plaintext)
+        );
+    }
+
+    function willDecryptAES256(key, iv, ciphertext) {
+        return crypto.subtle.decrypt(
+            {
+                name: 'AES-CBC',
+                iv: iv,
+            },
+            key,
+            ciphertext
+        );
+    }
+
+    /**
+     * Encrypt plaintext using 256 AES in CBC mode, deriving the key with PBKDF2.
+     *
+     * @param string plaintext the text to encrypt
+     * @param string secret the secret to use to derive the key with PBKDF2
+     * @param array optionsPBKDF2
+     *              - string salt use it to prevent dictionary attacks. Default to an empty string
+     *              - number iterations the number of PBKDF2 iterations to derive the key
+     * @param array optionsCipher
+     *              - Uint8Array|hexstring iv initialization vector, default to 16 random bytes
+     *              - boolean ivPrefixed set to true if you want to prepend the iv to the ciphertext. Default false
+     * @return Promise that will resolve to an array with keys iv, ciphertext, whose values are hexstrings
+     *
+     * Note that if you didn't pass the iv as an option it will randomically generated and returned
+     * in the promise resolution: in that case you'll want to save it.
+     *
+     * >>> // example
+     * >>>
+     * >>> willEncryptPlaintext(
+     * >>>     'the text to encrypt',
+     * >>>     'your strong secret',
+     * >>>     {
+     * >>>         salt: 'string to make your key unique even if your secret was more common than you thinked',
+     * >>>     }
+     * >>> ).then(function (result) {
+     * >>>     console.log(result.ciphertext); // e.g. 6631684b17b579ebc6ea34ff207da0769ea20a08616c5d97c5c7e22b1fd03024
+     * >>>     console.log(result.iv); // e.g. 6155493c3a9b1f3134e996e6abbef8d1
+     * >>> });
+     */
+    function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, optionsCipher) {
+        optionsPBKDF2 = Object.assign({
+            salt: '',
+            iterations: 100,
+        }, optionsPBKDF2 || {});
+
+        optionsCipher = Object.assign({
+            iv: window.crypto.getRandomValues(new Uint8Array(16)),
+            ivPrefixed: false,
+        }, optionsCipher || {});
+
+        if (typeof optionsCipher.iv === 'string') {
+            optionsCipher.iv = hexToUint8Array(optionsCipher.iv);
+        }
+
+        return willGenerateKeyPBKDF2(secret)
+        .then(function (baseKey) {
+            return willDeriveKey(baseKey, optionsPBKDF2.salt, optionsPBKDF2.iterations);
+        })
+        .then(function (derivedKey) {
+            return willEncryptAES256(derivedKey, optionsCipher.iv, plaintext);
+        })
+        .then(function (cipherBuffer) {
+            let iv = buf2hex(optionsCipher.iv);
+            return {
+                iv: iv,
+                ciphertext: (optionsCipher.ivPrefixed ? iv : '') + buf2hex(cipherBuffer),
+            };
+        });
+    }
+
+    /**
+     * Decrypt ciphertext using 256 AES in CBC mode, deriving the key with PBKDF2.
+     *
+     * @param string ciphertext the text to encrypt
+     * @param string secret the secret to use to derive the key with PBKDF2
+     * @param array optionsPBKDF2
+     *              - string salt the string used alongside the secret to derive the key. Default to an empty string
+     *              - number iterations the number of PBKDF2 iterations used to derive the key
+     * @param array optionsCipher
+     *              - Uint8Array|hexstring iv initialization vector, default to 16 zeroes
+     *              - boolean ivPrefixed true if the first 16 bytes of ciphertext is the iv. Default false
+     * @return Promise that will resolve to an object with key plaintext, whose value is the plaintext as string
+     */
+    function willDecryptCiphertext(ciphertext, secret, optionsPBKDF2, optionsCipher) {
+        optionsPBKDF2 = Object.assign({
+            salt: '',
+            iterations: 100,
+        }, optionsPBKDF2 || {});
+
+        optionsCipher = Object.assign({
+            iv: new Uint8Array(16),
+            ivPrefixed: false,
+        }, optionsCipher || {});
+
+        if (typeof optionsCipher.iv === 'string') {
+            optionsCipher.iv = hexToUint8Array(optionsCipher.iv);
+        }
+
+        if (typeof ciphertext === 'string') {
+            ciphertext = hexToUint8Array(ciphertext);
+        }
+
+        return willGenerateKeyPBKDF2(secret)
+        .then(function (baseKey) {
+            return willDeriveKey(baseKey, optionsPBKDF2.salt, optionsPBKDF2.iterations);
+        })
+        .then(function (derivedKey) {
+            let iv = optionsCipher.iv;
+
+            if (optionsCipher.ivPrefixed) {
+                iv = new Uint8Array(16)
+                // use a 16 zeroes iv. Alternatively we could slice off the iv and use it
+                // (in that case we should not drop anymore the first 16 bytes in the last step)
+            }
+
+            return willDecryptAES256(derivedKey, iv, ciphertext);
+        })
+        .then(function (plaintextBuffer) {
+            return {
+                plaintext: bufToString(plaintextBuffer.slice(optionsCipher.ivPrefixed ? 16 : 0)),
+            };
+        });
+    }
+
+    function requestEncryption() {
+        let secret = getSecret();
+        let plaintext = getPlaintext();
+        let salt = getPBKDF2Salt();
+        let iterations = getPBKDF2Iterations();
+
+        willEncryptPlaintext(
+            plaintext,
+            secret,
+            {
+                salt: salt,
+                iterations: iterations,
+            },
+            Object.assign({
+                ivPrefixed: isIVPrefixed(),
+            }, isIVRandom() ? {} : {
+                iv: getIV(),
+            })
+        ).then(function (result) {
+            setCiphertext(result.ciphertext);
+            setIV(result.iv);
+        });
+
+        willGeneratePBKDF2KeyAsHexString(secret, salt, iterations).then(setDerivedKey);
+    }
+
+    function requestDecryption() {
+        let ciphertext = getCiphertext();
+        let secret = getSecret();
+        let iv = getIV();
+        let salt = getPBKDF2Salt();
+        let iterations = getPBKDF2Iterations();
+
+        if (ciphertext === '') {
+            setPlaintext('');
+            return;
+        }
+
+        willDecryptCiphertext(
+            ciphertext,
+            secret,
+            {
+                salt: salt,
+                iterations: iterations,
+            },
+            {
+                iv: isIVPrefixed() ? '' : iv,
+                ivPrefixed: isIVPrefixed(),
+            }
+        ).then(function (result) {
+            setPlaintext(result.plaintext);
+        })
+        .catch(function(e) {
+            let message = e.message || 'Unknown error';
+
+            if (e instanceof DOMException) {
+                switch (e.name) {
+                    case 'NotSupportedError':
+                        message = 'The algorithm is not supported';
+                        break;
+                    case 'SyntaxError':
+                        message = 'A required parameter was missing or out-of-range';
+                        break;
+                    case 'InvalidAccessError':
+                        message = 'The requested operation is not valid for the provided key';
+                        break;
+                    case 'DataError':
+                        message = 'Data provided to an operation does not meet requirements';
+                        break;
+                    case 'OperationError':
+                        message = 'The operation failed for an operation-specific reason';
+                        message += ' (most likely the ciphertext is not correct)';
+                        break;
+                }
+
+                setCiphertextErrorMessage(message);
+                setPlaintextErrorMessage(
+                    'The plaintext does not reflect the ciphertext (focus the textarea to refresh)'
+                );
+            } else {
+                throw e;
+            }
+        });;
+    }
+
+    let getPlaintextDOMElement = () => document.getElementById('plaintext');
+    let getPlaintext = () => getPlaintextDOMElement().value;
+    let setPlaintext = value => getPlaintextDOMElement().value = value;
+
+    let getCiphertextDOMElement = () => document.getElementById('ciphertext');
+    let getCiphertext = () => getCiphertextDOMElement().value;
+    let setCiphertext = value => getCiphertextDOMElement().value = value;
+
+    let getSecretDOMElement = () => document.getElementById('secret');
+    let getSecret = () => getSecretDOMElement().value;
+
+    let getIVDOMElement = () => document.getElementById('iv');
+    let getIV = () => getIVDOMElement().value;
+    let setIV = value => getIVDOMElement().value = value;
+
+    let getDerivedKeyOMElement = () => document.getElementById('derived-key');
+    let setDerivedKey = value => getDerivedKeyOMElement().value = value;
+
+    let getPrefixIVDOMElement = () => document.getElementById('prefix-iv');
+    let isIVPrefixed = () => getPrefixIVDOMElement().checked;
+
+    let getPBKDF2SaltDOMElement = () => document.getElementById('pbkdf2-salt');
+    let getPBKDF2Salt = () => getPBKDF2SaltDOMElement().value;
+
+    let getPBKDF2IterationsDOMElement = () => document.getElementById('pbkdf2-iterations');
+    let getPBKDF2Iterations = () => getPBKDF2IterationsDOMElement().value;
+
+    let getIVisRandomDOMElement = () => document.getElementById('iv-is-random');
+    let isIVRandom = () => getIVisRandomDOMElement().checked;
+
+    let getCiphertextErrorMessageDOMElement = () => document.getElementById('ciphertext-error-message');
+    let getCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText.trim();
+    let setCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText = message;
+
+    let getPlaintextErrorMessageDOMElement = () => document.getElementById('plaintext-error-message');
+    let getPlaintextErrorMessage = message => getPlaintextErrorMessageDOMElement().innerText.trim();
+    let setPlaintextErrorMessage = message => getPlaintextErrorMessageDOMElement().innerText = message;
+
+    let clearErrorMessages = () => {
+        setCiphertextErrorMessage('');
+        setPlaintextErrorMessage('');
+    };
+
+    let hasErrors = () => Boolean(getPlaintextErrorMessage() || getCiphertextErrorMessage());
+
+    // encrypt on focus only when there are errors, otherwise with a random IV we would
+    // change the ciphertext without reason
+    getPlaintextDOMElement().addEventListener('focus', ev => {
+        if (hasErrors()) {
+            clearErrorMessages();
+            requestEncryption();
+        }
+    });
+
+    getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
+
+    // redo encryption if any of the fields used to encrypt has changed
+    getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
+        let eventType = 'input';
+
+        if (elem.type === 'checkbox') {
+            eventType = 'change';
+        }
+
+        elem.addEventListener(eventType, ev => { clearErrorMessages(); requestEncryption(); });
+    });
+
+    // redo decryption if the ciphertext has changed (or may have changed)
+    ['input', 'focus'].forEach(eventType => {
+        getCiphertextDOMElement().addEventListener(eventType, ev => { clearErrorMessages(); requestDecryption(); });
+    });
+
+    document.querySelector('.advanced-options-legend').addEventListener('click', ev => {
+        return document.querySelector('.advanced-options').classList.toggle('is-active');
+    });
+
+    /** DROPBOX load/save **/
+    let getDropboxAccessTokenDOMElement = () => document.getElementById('dropbox-access-token');
+    let getLoadFromDropboxButtonDOMElement = () => document.getElementById('dropbox-load-btn');
+    let getSaveToDropboxButtonDOMElement = () => document.getElementById('dropbox-save-btn');
+    let getDropboxAccessToken = () => getDropboxAccessTokenDOMElement().value.trim();
+
+    function loadFromDropbox(accessToken) {
+        fetch('https://content.dropboxapi.com/2/files/download', {
+            method: 'POST',
+            headers: {
+                Authorization: 'Bearer ' + accessToken,
+                'Dropbox-API-Arg': JSON.stringify({ path: '/foo/bar.txt' }),
+            },
+            mode: 'cors',
+            cache: 'no-store',
+            referrerPolicy: 'no-referrer',
+        })
+        .then(response => {
+            if (!response.ok) { throw Error(response.statusText); }
+            else { return response; }
+        })
+        .then(response => response.text())
+        .then(fileContent => {
+            setCiphertext(fileContent);
+            requestDecryption();
+        })
+        .catch(setPlaintextErrorMessage);
+    }
+
+    function saveToDropbox(accessToken) {
+        fetch('https://content.dropboxapi.com/2/files/upload', {
+            method: 'POST',
+            headers: {
+                Authorization: 'Bearer ' + accessToken,
+                'Content-Type': 'application/octet-stream',
+                'Dropbox-API-Arg': JSON.stringify({
+                    path: '/foo/BaR.txt',
+                    mode:'overwrite',
+                }),
+            },
+            body: getCiphertext(),
+            mode: 'cors',
+            cache: 'no-store',
+            referrerPolicy: 'no-referrer',
+        })
+        .then(response => {
+            if (!response.ok) { throw Error(response.statusText); }
+            else { return response; }
+        })
+        .catch(setPlaintextErrorMessage);
+    }
+
+    getLoadFromDropboxButtonDOMElement().addEventListener('click', ev => {
+        return getDropboxAccessToken()
+               && loadFromDropbox(getDropboxAccessToken());
+    });
+
+    getSaveToDropboxButtonDOMElement().addEventListener('click', ev => {
+        return getDropboxAccessToken()
+               && confirm('You are going to overwrite the old ciphertext, are you ok with it?')
+               && saveToDropbox(getDropboxAccessToken());
+    });
+    /* END DROPBOX load/save */
+
+</script>
+</body>
+</html>
