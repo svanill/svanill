@@ -251,29 +251,10 @@ span.error:empty:before {
             <fieldset>
                 <legend>Encryption</legend>
                 <div class="iv-options">
-                    <label>
-                        <input type="checkbox" id="prefix-iv" checked class="change-ciphertext" />
-                        Prefix ciphertext with IV
-                    </label>
                     <span class="iv-container">
-                        <label>IV
-                            <input
-                                id="iv"
-                                type="text"
-                                placeholder="IV (initialization vector)"
-                                disabled
-                                value="00000000000000000000000000000000"
-                                class="change-ciphertext"
-                            />
+                        <label>IV (initialization vector)
+                            <span id="iv"></span>
                         </label>
-                        <input
-                            id="iv-is-random"
-                            type="checkbox"
-                            checked
-                            onchange="document.getElementById('iv').disabled = this.checked"
-                            class="change-ciphertext"
-                        />
-                        <label for="iv-is-random">Randomize before encrypt</label>
                     </span>
                 </div>
             </fieldset>
@@ -372,7 +353,6 @@ span.error:empty:before {
      *              - number iterations the number of PBKDF2 iterations to derive the key
      * @param array optionsCipher
      *              - Uint8Array|hexstring iv initialization vector, default to 16 random bytes
-     *              - boolean ivPrefixed set to true if you want to prepend the iv to the ciphertext. Default false
      * @return Promise that will resolve to an array with keys iv, ciphertext, whose values are hexstrings
      *
      * Note that if you didn't pass the iv as an option it will randomically generated and returned
@@ -399,7 +379,6 @@ span.error:empty:before {
 
         optionsCipher = Object.assign({
             iv: window.crypto.getRandomValues(new Uint8Array(16)),
-            ivPrefixed: false,
         }, optionsCipher || {});
 
         if (typeof optionsCipher.iv === 'string') {
@@ -417,7 +396,7 @@ span.error:empty:before {
             let iv = buf2hex(optionsCipher.iv);
             return {
                 iv: iv,
-                ciphertext: (optionsCipher.ivPrefixed ? iv : '') + buf2hex(cipherBuffer),
+                ciphertext: buf2hex(cipherBuffer),
             };
         });
     }
@@ -488,15 +467,10 @@ span.error:empty:before {
             {
                 salt: salt,
                 iterations: iterations,
-            },
-            Object.assign({
-                ivPrefixed: isIVPrefixed(),
-            }, isIVRandom() ? {} : {
-                iv: getIV(),
-            })
+            }
         ).then(function (result) {
-            setCiphertext(result.ciphertext);
-            setIV(result.iv);
+            setIVLabel(result.iv)
+            setCiphertext(result.iv + result.ciphertext);
         });
 
         willGeneratePBKDF2KeyAsHexString(secret, salt, iterations).then(setDerivedKey);
@@ -522,8 +496,8 @@ span.error:empty:before {
                 iterations: iterations,
             },
             {
-                iv: isIVPrefixed() ? '' : iv,
-                ivPrefixed: isIVPrefixed(),
+                iv: iv,
+                ivPrefixed: false,
             }
         ).then(function (result) {
             setPlaintext(result.plaintext);
@@ -573,23 +547,16 @@ span.error:empty:before {
     let getSecret = () => getSecretDOMElement().value;
 
     let getIVDOMElement = () => document.getElementById('iv');
-    let getIV = () => getIVDOMElement().value;
-    let setIV = value => getIVDOMElement().value = value;
+    let setIVLabel = value => getIVDOMElement().innerText = value;
 
     let getDerivedKeyOMElement = () => document.getElementById('derived-key');
     let setDerivedKey = value => getDerivedKeyOMElement().value = value;
-
-    let getPrefixIVDOMElement = () => document.getElementById('prefix-iv');
-    let isIVPrefixed = () => getPrefixIVDOMElement().checked;
 
     let getPBKDF2SaltDOMElement = () => document.getElementById('pbkdf2-salt');
     let getPBKDF2Salt = () => PBKDF2_SALT;
 
     let getPBKDF2IterationsDOMElement = () => document.getElementById('pbkdf2-iterations');
     let getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
-
-    let getIVisRandomDOMElement = () => document.getElementById('iv-is-random');
-    let isIVRandom = () => getIVisRandomDOMElement().checked;
 
     let getCiphertextErrorMessageDOMElement = () => document.getElementById('ciphertext-error-message');
     let getCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText.trim();
