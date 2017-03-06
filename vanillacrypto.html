@@ -180,10 +180,6 @@ span.error:empty:before {
     flex: 0.2;
 }
 
-.load-save {
-    display: flex;
-}
-
 </style>
 </head>
 <body>
@@ -211,15 +207,6 @@ span.error:empty:before {
         <h2>Ciphertext</h2>
         <span id="ciphertext-error-message" class="error"></span>
         <textarea id="ciphertext"></textarea>
-    </div>
-
-    <div class="load-save">
-        <div class="save-container">
-            <div class="save-choice-row">Load/Save to dropbox
-            <input id="dropbox-access-token" type="text" placeholder="Access token...">
-            <button id="dropbox-load-btn">Load</button>
-            <button id="dropbox-save-btn">Save</button></div>
-        </div>
     </div>
 
     <fieldset class="advanced-options">
@@ -639,70 +626,6 @@ span.error:empty:before {
     document.querySelector('.advanced-options-legend').addEventListener('click', ev => {
         return document.querySelector('.advanced-options').classList.toggle('is-active');
     });
-
-    /** DROPBOX load/save **/
-    let getDropboxAccessTokenDOMElement = () => document.getElementById('dropbox-access-token');
-    let getLoadFromDropboxButtonDOMElement = () => document.getElementById('dropbox-load-btn');
-    let getSaveToDropboxButtonDOMElement = () => document.getElementById('dropbox-save-btn');
-    let getDropboxAccessToken = () => getDropboxAccessTokenDOMElement().value.trim();
-
-    function loadFromDropbox(accessToken) {
-        fetch('https://content.dropboxapi.com/2/files/download', {
-            method: 'POST',
-            headers: {
-                Authorization: 'Bearer ' + accessToken,
-                'Dropbox-API-Arg': JSON.stringify({ path: '/foo/bar.txt' }),
-            },
-            mode: 'cors',
-            cache: 'no-store',
-            referrerPolicy: 'no-referrer',
-        })
-        .then(response => {
-            if (!response.ok) { throw Error(response.statusText); }
-            else { return response; }
-        })
-        .then(response => response.text())
-        .then(fileContent => {
-            setCiphertext(fileContent);
-            requestDecryption();
-        })
-        .catch(setPlaintextErrorMessage);
-    }
-
-    function saveToDropbox(accessToken) {
-        fetch('https://content.dropboxapi.com/2/files/upload', {
-            method: 'POST',
-            headers: {
-                Authorization: 'Bearer ' + accessToken,
-                'Content-Type': 'application/octet-stream',
-                'Dropbox-API-Arg': JSON.stringify({
-                    path: '/foo/BaR.txt',
-                    mode:'overwrite',
-                }),
-            },
-            body: getCiphertext(),
-            mode: 'cors',
-            cache: 'no-store',
-            referrerPolicy: 'no-referrer',
-        })
-        .then(response => {
-            if (!response.ok) { throw Error(response.statusText); }
-            else { return response; }
-        })
-        .catch(setPlaintextErrorMessage);
-    }
-
-    getLoadFromDropboxButtonDOMElement().addEventListener('click', ev => {
-        return getDropboxAccessToken()
-               && loadFromDropbox(getDropboxAccessToken());
-    });
-
-    getSaveToDropboxButtonDOMElement().addEventListener('click', ev => {
-        return getDropboxAccessToken()
-               && confirm('You are going to overwrite the old ciphertext, are you ok with it?')
-               && saveToDropbox(getDropboxAccessToken());
-    });
-    /* END DROPBOX load/save */
 
 </script>
 </body>
