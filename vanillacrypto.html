@@ -2,6 +2,16 @@
 <html>
 <head>
 <meta charset="utf-8" />
+<script>
+// Salt, a random string, at least 8 characters long. It ensures that
+// the derived key will be different even if two people have the same
+// password.
+const PBKDF2_SALT = '';
+// Iteration count for PBKDF2. At least 10000. The higher the value
+// the longer you'll need to wait after entering the password to
+// derive the key used for encryption.
+const PBKDF2_ITERATIONS = 60000;
+</script>
 <style>
 
 html {
@@ -219,11 +229,11 @@ span.error:empty:before {
                 <div class="pbkdf2-options">
                     <label class="pbkdf2-salt-line">
                         <span class="field-name">Salt</span>
-                        <input id="pbkdf2-salt" type="text" value="vanillacrypto" class="change-ciphertext" />
+                        <span id="pbkdf2-salt"></span>
                     </label>
                     <label class="pbkdf2-iterations-line">
                         <span class="field-name">Iterations</span>
-                        <input id="pbkdf2-iterations" type="text" value="60000" class="change-ciphertext" />
+                        <span id="pbkdf2-iterations"></span>
                     </label>
                 </div>
 
@@ -573,10 +583,10 @@ span.error:empty:before {
     let isIVPrefixed = () => getPrefixIVDOMElement().checked;
 
     let getPBKDF2SaltDOMElement = () => document.getElementById('pbkdf2-salt');
-    let getPBKDF2Salt = () => getPBKDF2SaltDOMElement().value;
+    let getPBKDF2Salt = () => PBKDF2_SALT;
 
     let getPBKDF2IterationsDOMElement = () => document.getElementById('pbkdf2-iterations');
-    let getPBKDF2Iterations = () => getPBKDF2IterationsDOMElement().value;
+    let getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
 
     let getIVisRandomDOMElement = () => document.getElementById('iv-is-random');
     let isIVRandom = () => getIVisRandomDOMElement().checked;
@@ -595,6 +605,9 @@ span.error:empty:before {
     };
 
     let hasErrors = () => Boolean(getPlaintextErrorMessage() || getCiphertextErrorMessage());
+
+    getPBKDF2SaltDOMElement().innerText = getPBKDF2Salt() || '<empty>';
+    getPBKDF2IterationsDOMElement().innerText = getPBKDF2Iterations();
 
     // encrypt on focus only when there are errors, otherwise with a random IV we would
     // change the ciphertext without reason
