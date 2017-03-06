@@ -236,16 +236,6 @@ span.error:empty:before {
                         <span id="pbkdf2-iterations"></span>
                     </label>
                 </div>
-
-                <span class="derived-key">Derived key</span>
-                <input id="derived-key" type="password" disabled class="value change-ciphertext" />
-                <input
-                    id="show-derived-key"
-                    type="checkbox"
-                    onchange="document.getElementById('derived-key').type = this.checked ? 'text' : 'password'"
-                    title="Show derived key"
-                />
-                <label for="show-derived-key">👁</label>
             </fieldset>
 
             <fieldset>
@@ -288,12 +278,12 @@ span.error:empty:before {
             'raw',
             stringToUint8Array(secret),
             { name: 'PBKDF2' },
-            false,
+            false, // whether the key can be extracted or not
             [ 'deriveBits', 'deriveKey' ]
         );
     }
 
-    function willDeriveKey(baseKey, saltString, iterations, canBeExtracted) {
+    function willDeriveKey(baseKey, saltString, iterations) {
         return crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
@@ -303,22 +293,9 @@ span.error:empty:before {
             },
             baseKey,
             { "name": 'AES-CBC', "length": 256 },
-            Boolean(canBeExtracted),
+            false, // whether the key can be extracted or not
             [ "encrypt", "decrypt" ]
         );
-    }
-
-    function willGeneratePBKDF2KeyAsHexString(secret, salt, iterations) {
-        return willGenerateKeyPBKDF2(secret)
-        .then(function (baseKey) {
-            return willDeriveKey(baseKey, salt, iterations, true);
-        })
-        .then(function (derivedKey) {
-            return crypto.subtle.exportKey('raw', derivedKey);
-        })
-        .then(function (buffer) {
-            return buf2hex(buffer);
-        });
     }
 
     function willEncryptAES256(key, iv, plaintext) {
@@ -472,8 +449,6 @@ span.error:empty:before {
             setIVLabel(result.iv)
             setCiphertext(result.iv + result.ciphertext);
         });
-
-        willGeneratePBKDF2KeyAsHexString(secret, salt, iterations).then(setDerivedKey);
     }
 
     function requestDecryption() {
@@ -548,9 +523,6 @@ span.error:empty:before {
 
     let getIVDOMElement = () => document.getElementById('iv');
     let setIVLabel = value => getIVDOMElement().innerText = value;
-
-    let getDerivedKeyOMElement = () => document.getElementById('derived-key');
-    let setDerivedKey = value => getDerivedKeyOMElement().value = value;
 
     let getPBKDF2SaltDOMElement = () => document.getElementById('pbkdf2-salt');
     let getPBKDF2Salt = () => PBKDF2_SALT;
