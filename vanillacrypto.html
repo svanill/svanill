@@ -423,9 +423,6 @@ span.error:empty:before {
         }
 
         willDecryptCiphertext(ciphertext, secret, optionsPBKDF2)
-        .then(function (result) {
-            setPlaintext(result.plaintext);
-        })
         .catch(function(e) {
             setCiphertextErrorMessage('The operation failed (most likely the ciphertext is not correct)');
             setPlaintextErrorMessage(
@@ -435,7 +432,10 @@ span.error:empty:before {
             if (!e instanceof DOMException) {
                 throw e;
             }
-        });;
+        })
+        .then(function (result) {
+            setPlaintext(result.plaintext);
+        });
     }
 
     let getPlaintextDOMElement = () => document.getElementById('plaintext');
