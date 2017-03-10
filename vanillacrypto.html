@@ -427,33 +427,12 @@ span.error:empty:before {
             setPlaintext(result.plaintext);
         })
         .catch(function(e) {
-            let message = e.message || 'Unknown error';
+            setCiphertextErrorMessage('The operation failed (most likely the ciphertext is not correct)');
+            setPlaintextErrorMessage(
+                'The plaintext does not reflect the ciphertext (focus the textarea to refresh)'
+            );
 
-            if (e instanceof DOMException) {
-                switch (e.name) {
-                    case 'NotSupportedError':
-                        message = 'The algorithm is not supported';
-                        break;
-                    case 'SyntaxError':
-                        message = 'A required parameter was missing or out-of-range';
-                        break;
-                    case 'InvalidAccessError':
-                        message = 'The requested operation is not valid for the provided key';
-                        break;
-                    case 'DataError':
-                        message = 'Data provided to an operation does not meet requirements';
-                        break;
-                    case 'OperationError':
-                        message = 'The operation failed for an operation-specific reason';
-                        message += ' (most likely the ciphertext is not correct)';
-                        break;
-                }
-
-                setCiphertextErrorMessage(message);
-                setPlaintextErrorMessage(
-                    'The plaintext does not reflect the ciphertext (focus the textarea to refresh)'
-                );
-            } else {
+            if (!e instanceof DOMException) {
                 throw e;
             }
         });;
