@@ -292,32 +292,49 @@ span.error:empty:before {
                 hash: 'SHA-256'
             },
             baseKey,
-            { "name": 'AES-CBC', "length": 256 },
+            { "name": 'AES-GCM', "length": 256 },
             false, // whether the key can be extracted or not
             [ "encrypt", "decrypt" ]
         );
     }
 
-    function willEncryptAES256(key, iv, plaintext) {
+    function willEncryptAESGCM(key, params) {
+        const { iv, additionalData, plaintext } = params;
+        const adAsBytes = stringToUint8Array(JSON.stringify(additionalData));
+
         return crypto.subtle.encrypt(
             {
-                name: 'AES-CBC',
-                iv: iv,
+                name: 'AES-GCM',
+                iv,
+                additionalData: adAsBytes,
             },
             key,
             stringToUint8Array(plaintext)
-        );
+        ).then(enc => {
+            return [
+                buf2hex(adAsBytes),
+                buf2hex(iv),
+                buf2hex(enc), // ciphertext | tag
+            ].join('.');
+        });
     }
 
-    function willDecryptAES256(key, iv, ciphertext) {
+    function willDecryptAESGCM(key, encTransportBlock) {
+        const [adAsHex = '', ivAsHex = '', ciphertextPlusTag = ''] = encTransportBlock.split('.');
+
         return crypto.subtle.decrypt(
             {
-                name: 'AES-CBC',
-                iv: iv,
+                name: 'AES-GCM',
+                iv: hexToUint8Array(ivAsHex),
+                additionalData: hexToUint8Array(adAsHex)
             },
             key,
-            ciphertext
-        );
+            hexToUint8Array(ciphertextPlusTag)
+        ).then(dec => ({
+            plaintext: bufToString(dec),
+            additionalData: JSON.parse(bufToString(hexToUint8Array(adAsHex))),
+            iv: hexToUint8Array(ivAsHex),
+        }));
     }
 
     /**
@@ -367,14 +384,11 @@ span.error:empty:before {
             return willDeriveKey(baseKey, optionsPBKDF2.salt, optionsPBKDF2.iterations);
         })
         .then(function (derivedKey) {
-            return willEncryptAES256(derivedKey, optionsCipher.iv, plaintext);
-        })
-        .then(function (cipherBuffer) {
-            let iv = buf2hex(optionsCipher.iv);
-            return {
-                iv: iv,
-                ciphertext: buf2hex(cipherBuffer),
-            };
+            return willEncryptAESGCM(derivedKey, {
+                iv: optionsCipher.iv,
+                plaintext,
+                additionalData: optionsPBKDF2
+            });
         });
     }
 
@@ -386,49 +400,20 @@ span.error:empty:before {
      * @param array optionsPBKDF2
      *              - string salt the string used alongside the secret to derive the key. Default to an empty string
      *              - number iterations the number of PBKDF2 iterations used to derive the key
-     * @param array optionsCipher
-     *              - Uint8Array|hexstring iv initialization vector, default to 16 zeroes
-     *              - boolean ivPrefixed true if the first 16 bytes of ciphertext is the iv. Default false
      * @return Promise that will resolve to an object with key plaintext, whose value is the plaintext as string
      */
-    function willDecryptCiphertext(ciphertext, secret, optionsPBKDF2, optionsCipher) {
+    function willDecryptCiphertext(ciphertext, secret, optionsPBKDF2) {
         optionsPBKDF2 = Object.assign({
             salt: '',
             iterations: 100,
         }, optionsPBKDF2 || {});
-
-        optionsCipher = Object.assign({
-            iv: new Uint8Array(16),
-            ivPrefixed: false,
-        }, optionsCipher || {});
-
-        if (typeof optionsCipher.iv === 'string') {
-            optionsCipher.iv = hexToUint8Array(optionsCipher.iv);
-        }
-
-        if (typeof ciphertext === 'string') {
-            ciphertext = hexToUint8Array(ciphertext);
-        }
 
         return willGenerateKeyPBKDF2(secret)
         .then(function (baseKey) {
             return willDeriveKey(baseKey, optionsPBKDF2.salt, optionsPBKDF2.iterations);
         })
         .then(function (derivedKey) {
-            let iv = optionsCipher.iv;
-
-            if (optionsCipher.ivPrefixed) {
-                iv = new Uint8Array(16)
-                // use a 16 zeroes iv. Alternatively we could slice off the iv and use it
-                // (in that case we should not drop anymore the first 16 bytes in the last step)
-            }
-
-            return willDecryptAES256(derivedKey, iv, ciphertext);
-        })
-        .then(function (plaintextBuffer) {
-            return {
-                plaintext: bufToString(plaintextBuffer.slice(optionsCipher.ivPrefixed ? 16 : 0)),
-            };
+            return willDecryptAESGCM(derivedKey, ciphertext);
         });
     }
 
@@ -446,15 +431,13 @@ span.error:empty:before {
                 iterations: iterations,
             }
         ).then(function (result) {
-            setIVLabel(result.iv)
-            setCiphertext(result.iv + result.ciphertext);
+            setCiphertext(result);
         });
     }
 
     function requestDecryption() {
         let ciphertext = getCiphertext();
         let secret = getSecret();
-        let iv = getIV();
         let salt = getPBKDF2Salt();
         let iterations = getPBKDF2Iterations();
 
@@ -469,10 +452,6 @@ span.error:empty:before {
             {
                 salt: salt,
                 iterations: iterations,
-            },
-            {
-                iv: iv,
-                ivPrefixed: false,
             }
         ).then(function (result) {
             setPlaintext(result.plaintext);
