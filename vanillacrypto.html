@@ -283,7 +283,7 @@ span.error:empty:before {
         );
     }
 
-    function willDeriveKey(baseKey, saltString, iterations) {
+    function willDeriveKey(baseKey, {saltString, iterations}) {
         return crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
@@ -365,7 +365,7 @@ span.error:empty:before {
     function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv) {
         return willGenerateKeyPBKDF2(secret)
         .then(function (baseKey) {
-            return willDeriveKey(baseKey, optionsPBKDF2.salt, optionsPBKDF2.iterations);
+            return willDeriveKey(baseKey, optionsPBKDF2);
         })
         .then(function (derivedKey) {
             return willEncryptAESGCM(derivedKey, {
@@ -389,7 +389,7 @@ span.error:empty:before {
     function willDecryptCiphertext(ciphertext, secret, optionsPBKDF2) {
         return willGenerateKeyPBKDF2(secret)
         .then(function (baseKey) {
-            return willDeriveKey(baseKey, optionsPBKDF2.salt, optionsPBKDF2.iterations);
+            return willDeriveKey(baseKey, optionsPBKDF2);
         })
         .then(function (derivedKey) {
             return willDecryptAESGCM(derivedKey, ciphertext);
@@ -399,42 +399,31 @@ span.error:empty:before {
     function requestEncryption() {
         let secret = getSecret();
         let plaintext = getPlaintext();
-        let salt = getPBKDF2Salt();
-        let iterations = getPBKDF2Iterations();
         let iv = window.crypto.getRandomValues(new Uint8Array(16));
+        let optionsPBKDF2 = {
+            salt: getPBKDF2Salt(),
+            iterations: getPBKDF2Iterations(),
+        };
 
-        willEncryptPlaintext(
-            plaintext,
-            secret,
-            {
-                salt: salt,
-                iterations: iterations,
-            },
-            iv
-        ).then(function (result) {
-            setCiphertext(result);
-        });
+        willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv)
+        .then(setCiphertext);
     }
 
     function requestDecryption() {
         let ciphertext = getCiphertext();
         let secret = getSecret();
-        let salt = getPBKDF2Salt();
-        let iterations = getPBKDF2Iterations();
+        let optionsPBKDF2 = {
+            salt: getPBKDF2Salt(),
+            iterations: getPBKDF2Iterations(),
+        };
 
         if (ciphertext === '') {
             setPlaintext('');
             return;
         }
 
-        willDecryptCiphertext(
-            ciphertext,
-            secret,
-            {
-                salt: salt,
-                iterations: iterations,
-            }
-        ).then(function (result) {
+        willDecryptCiphertext(ciphertext, secret, optionsPBKDF2)
+        .then(function (result) {
             setPlaintext(result.plaintext);
         })
         .catch(function(e) {
