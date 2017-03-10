@@ -264,7 +264,7 @@ span.error:empty:before {
     }
 
     function buf2hex(bufferSource) {
-    return Array.prototype.map.call(new Uint8Array(bufferSource), x => ('00' + x.toString(16)).slice(-2)).join('');
+        return Array.from(new Uint8Array(bufferSource)).map(x => ('00' + x.toString(16)).slice(-2)).join('');
     }
 
     function hexToUint8Array(hex) {
