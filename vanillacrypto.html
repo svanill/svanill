@@ -345,12 +345,7 @@ span.error:empty:before {
      * @param array optionsPBKDF2
      *              - string salt use it to prevent dictionary attacks. Default to an empty string
      *              - number iterations the number of PBKDF2 iterations to derive the key
-     * @param array optionsCipher
-     *              - Uint8Array|hexstring iv initialization vector, default to 16 random bytes
      * @return Promise that will resolve to an array with keys iv, ciphertext, whose values are hexstrings
-     *
-     * Note that if you didn't pass the iv as an option it will randomically generated and returned
-     * in the promise resolution: in that case you'll want to save it.
      *
      * >>> // example
      * >>>
@@ -359,25 +354,18 @@ span.error:empty:before {
      * >>>     'your strong secret',
      * >>>     {
      * >>>         salt: 'string to make your key unique even if your secret was more common than you thinked',
-     * >>>     }
+     * >>>     },
+     * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
      * >>> ).then(function (result) {
      * >>>     console.log(result.ciphertext); // e.g. 6631684b17b579ebc6ea34ff207da0769ea20a08616c5d97c5c7e22b1fd03024
      * >>>     console.log(result.iv); // e.g. 6155493c3a9b1f3134e996e6abbef8d1
      * >>> });
      */
-    function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, optionsCipher) {
+    function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv) {
         optionsPBKDF2 = Object.assign({
             salt: '',
             iterations: 100,
         }, optionsPBKDF2 || {});
-
-        optionsCipher = Object.assign({
-            iv: window.crypto.getRandomValues(new Uint8Array(16)),
-        }, optionsCipher || {});
-
-        if (typeof optionsCipher.iv === 'string') {
-            optionsCipher.iv = hexToUint8Array(optionsCipher.iv);
-        }
 
         return willGenerateKeyPBKDF2(secret)
         .then(function (baseKey) {
@@ -385,7 +373,7 @@ span.error:empty:before {
         })
         .then(function (derivedKey) {
             return willEncryptAESGCM(derivedKey, {
-                iv: optionsCipher.iv,
+                iv,
                 plaintext,
                 additionalData: optionsPBKDF2
             });
@@ -422,6 +410,7 @@ span.error:empty:before {
         let plaintext = getPlaintext();
         let salt = getPBKDF2Salt();
         let iterations = getPBKDF2Iterations();
+        let iv = window.crypto.getRandomValues(new Uint8Array(16));
 
         willEncryptPlaintext(
             plaintext,
@@ -429,7 +418,8 @@ span.error:empty:before {
             {
                 salt: salt,
                 iterations: iterations,
-            }
+            },
+            iv
         ).then(function (result) {
             setCiphertext(result);
         });
