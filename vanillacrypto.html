@@ -345,6 +345,7 @@ span.error:empty:before {
      * @param array optionsPBKDF2
      *              - string salt use it to prevent dictionary attacks
      *              - number iterations the number of PBKDF2 iterations to derive the key
+     * @param arrayBuffer iv a nonce to use in AES-GCM
      * @return Promise that will resolve to an array with keys iv, ciphertext, whose values are hexstrings
      *
      * >>> // example
@@ -358,8 +359,7 @@ span.error:empty:before {
      * >>>     },
      * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
      * >>> ).then(function (result) {
-     * >>>     console.log(result.ciphertext); // e.g. 6631684b17b579ebc6ea34ff207da0769ea20a08616c5d97c5c7e22b1fd03024
-     * >>>     console.log(result.iv); // e.g. 6155493c3a9b1f3134e996e6abbef8d1
+     * >>>     console.log(result); // e.g. "<additional data as hex>.<iv as hex>.<ciphertext as hex>"
      * >>> });
      */
     function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv) {
