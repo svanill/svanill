@@ -343,7 +343,7 @@ span.error:empty:before {
      * @param string plaintext the text to encrypt
      * @param string secret the secret to use to derive the key with PBKDF2
      * @param array optionsPBKDF2
-     *              - string salt use it to prevent dictionary attacks. Default to an empty string
+     *              - string salt use it to prevent dictionary attacks
      *              - number iterations the number of PBKDF2 iterations to derive the key
      * @return Promise that will resolve to an array with keys iv, ciphertext, whose values are hexstrings
      *
@@ -354,6 +354,7 @@ span.error:empty:before {
      * >>>     'your strong secret',
      * >>>     {
      * >>>         salt: 'string to make your key unique even if your secret was more common than you thinked',
+     * >>>         iterations: 60000,
      * >>>     },
      * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
      * >>> ).then(function (result) {
@@ -362,11 +363,6 @@ span.error:empty:before {
      * >>> });
      */
     function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv) {
-        optionsPBKDF2 = Object.assign({
-            salt: '',
-            iterations: 100,
-        }, optionsPBKDF2 || {});
-
         return willGenerateKeyPBKDF2(secret)
         .then(function (baseKey) {
             return willDeriveKey(baseKey, optionsPBKDF2.salt, optionsPBKDF2.iterations);
@@ -386,16 +382,11 @@ span.error:empty:before {
      * @param string ciphertext the text to encrypt
      * @param string secret the secret to use to derive the key with PBKDF2
      * @param array optionsPBKDF2
-     *              - string salt the string used alongside the secret to derive the key. Default to an empty string
+     *              - string salt the string used alongside the secret to derive the key
      *              - number iterations the number of PBKDF2 iterations used to derive the key
      * @return Promise that will resolve to an object with key plaintext, whose value is the plaintext as string
      */
     function willDecryptCiphertext(ciphertext, secret, optionsPBKDF2) {
-        optionsPBKDF2 = Object.assign({
-            salt: '',
-            iterations: 100,
-        }, optionsPBKDF2 || {});
-
         return willGenerateKeyPBKDF2(secret)
         .then(function (baseKey) {
             return willDeriveKey(baseKey, optionsPBKDF2.salt, optionsPBKDF2.iterations);
