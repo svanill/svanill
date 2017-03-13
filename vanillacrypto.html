@@ -263,14 +263,17 @@ span.error:empty:before {
         return new TextDecoder().decode(arr);
     }
 
-    function buf2hex(bufferSource) {
-        return Array.from(new Uint8Array(bufferSource)).map(x => ('00' + x.toString(16)).slice(-2)).join('');
+    function u_atob(ascii) {
+        return Uint8Array.from(atob(ascii), c => c.charCodeAt(0));
     }
 
-    function hexToUint8Array(hex) {
-        for (var bytes = [], c = 0; c < hex.length; c += 2)
-        bytes.push(parseInt(hex.substr(c, 2), 16));
-        return new Uint8Array(bytes);
+    function u_btoa(buffer) {
+        var binary = [];
+        var bytes = new Uint8Array(buffer);
+        for (var i = 0, il = bytes.byteLength; i < il; i++) {
+            binary.push(String.fromCharCode(bytes[i]));
+        }
+        return btoa(binary.join(''));
     }
 
     function willGenerateKeyPBKDF2(secret) {
@@ -312,28 +315,31 @@ span.error:empty:before {
             stringToUint8Array(plaintext)
         ).then(enc => {
             return [
-                buf2hex(adAsBytes),
-                buf2hex(iv),
-                buf2hex(enc), // ciphertext | tag
+                u_btoa(adAsBytes),
+                u_btoa(iv),
+                u_btoa(enc), // ciphertext | tag
             ].join('.');
         });
     }
 
     function willDecryptAESGCM(key, encTransportBlock) {
-        const [adAsHex = '', ivAsHex = '', ciphertextPlusTag = ''] = encTransportBlock.split('.');
+        const [ad_b64 = '', iv_b64 = '', ciphertextPlusTag_b64 = ''] = encTransportBlock.split('.');
+        const additionalData = u_atob(ad_b64);
+        const iv = u_atob(iv_b64);
+        const ciphertextPlusTag = u_atob(ciphertextPlusTag_b64);
 
         return crypto.subtle.decrypt(
             {
                 name: 'AES-GCM',
-                iv: hexToUint8Array(ivAsHex),
-                additionalData: hexToUint8Array(adAsHex)
+                iv,
+                additionalData,
             },
             key,
-            hexToUint8Array(ciphertextPlusTag)
+            ciphertextPlusTag
         ).then(dec => ({
             plaintext: bufToString(dec),
-            additionalData: JSON.parse(bufToString(hexToUint8Array(adAsHex))),
-            iv: hexToUint8Array(ivAsHex),
+            additionalData: JSON.parse(bufToString(additionalData)),
+            iv,
         }));
     }
 
