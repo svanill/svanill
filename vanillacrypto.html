@@ -402,7 +402,7 @@ span.error:empty:before {
         });
     }
 
-    function requestEncryption() {
+    function willRequestEncryption() {
         let secret = getSecret();
         let plaintext = getPlaintext();
         let iv = window.crypto.getRandomValues(new Uint8Array(16));
@@ -411,11 +411,10 @@ span.error:empty:before {
             iterations: getPBKDF2Iterations(),
         };
 
-        willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv)
-        .then(setCiphertext);
+        return willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv);
     }
 
-    function requestDecryption() {
+    function willRequestDecryption() {
         let ciphertext = getCiphertext();
         let secret = getSecret();
         let optionsPBKDF2 = {
@@ -428,7 +427,7 @@ span.error:empty:before {
             return;
         }
 
-        willDecryptCiphertext(ciphertext, secret, optionsPBKDF2)
+        return willDecryptCiphertext(ciphertext, secret, optionsPBKDF2)
         .catch(function(e) {
             setCiphertextErrorMessage('The operation failed (most likely the ciphertext is not correct)');
             setPlaintextErrorMessage(
@@ -438,9 +437,6 @@ span.error:empty:before {
             if (!e instanceof DOMException) {
                 throw e;
             }
-        })
-        .then(function (result) {
-            setPlaintext(result.plaintext);
         });
     }
 
@@ -487,7 +483,8 @@ span.error:empty:before {
     getPlaintextDOMElement().addEventListener('focus', ev => {
         if (hasErrors()) {
             clearErrorMessages();
-            requestEncryption();
+            willRequestEncryption()
+            .then(setCiphertext);
         }
     });
 
@@ -501,12 +498,22 @@ span.error:empty:before {
             eventType = 'change';
         }
 
-        elem.addEventListener(eventType, ev => { clearErrorMessages(); requestEncryption(); });
+        elem.addEventListener(eventType, ev => {
+            clearErrorMessages();
+            willRequestEncryption()
+            .then(setCiphertext);
+        });
     });
 
     // redo decryption if the ciphertext has changed (or may have changed)
     ['input', 'focus'].forEach(eventType => {
-        getCiphertextDOMElement().addEventListener(eventType, ev => { clearErrorMessages(); requestDecryption(); });
+        getCiphertextDOMElement().addEventListener(eventType, ev => {
+            clearErrorMessages();
+            willRequestDecryption()
+            .then(function (result) {
+                setPlaintext(result.plaintext);
+            });
+        });
     });
 
     document.querySelector('.advanced-options-legend').addEventListener('click', ev => {
