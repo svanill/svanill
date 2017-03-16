@@ -211,6 +211,7 @@ button {
                 type="checkbox"
                 onchange="document.getElementById('secret').type = this.checked ? 'text' : 'password'"
                 title="Show password"
+                autocomplete="off"
             />
             <label for="show-secret">👁</label>
         </span>
@@ -219,12 +220,12 @@ button {
     <div class="plaintext-container">
         <h2>Plaintext</h2>
         <span id="plaintext-error-message" class="error"></span>
-        <textarea id="plaintext" class="change-ciphertext"></textarea>
+        <textarea id="plaintext" class="change-ciphertext" autocomplete="off"></textarea>
     </div>
     <div class="ciphertext-container">
         <h2>Ciphertext</h2>
         <span id="ciphertext-error-message" class="error"></span>
-        <textarea id="ciphertext"></textarea>
+        <textarea id="ciphertext" autocomplete="off"></textarea>
     </div>
 
     <div class="actions">
