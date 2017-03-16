@@ -449,9 +449,7 @@ button {
                 'The plaintext does not reflect the ciphertext (focus the textarea to refresh)'
             );
 
-            if (!e instanceof DOMException) {
-                throw e;
-            }
+            return Promise.reject(e);
         });
     }
 
