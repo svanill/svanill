@@ -190,6 +190,14 @@ span.error:empty:before {
     flex: 0.2;
 }
 
+#download-cleartext {
+    background-color: red;
+}
+
+button {
+    background-color: green;
+}
+
 </style>
 </head>
 <body>
@@ -217,6 +225,13 @@ span.error:empty:before {
         <h2>Ciphertext</h2>
         <span id="ciphertext-error-message" class="error"></span>
         <textarea id="ciphertext"></textarea>
+    </div>
+
+    <div class="actions">
+        <button id="download-cleartext">Download clear text</button>
+        <button id="download-ciphertext">Download encrypted</button>
+        <!-- invisible anchor used to trigger the download dialog -->
+        <a id ="download-dialog-anchor" href="" style="display:none"></a>
     </div>
 
     <fieldset class="advanced-options">
@@ -440,6 +455,27 @@ span.error:empty:before {
         });
     }
 
+    function triggerDownloadDialog(blob, filename) {
+        const url = window.URL.createObjectURL(blob);
+        const anchor = getDownloadDialogAnchorDOMElement();
+
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.click();
+        window.URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Return a string with the format YYYY-MM-DD_HHMMSS
+     */
+    function makeDateTimePrefix(date) {
+        const isoDateTime = date.toISOString();
+        const datePart = isoDateTime.split('T')[0];
+        const timePart = isoDateTime.split('T')[1].split('.')[0];
+
+        return datePart + '_' + timePart.replace(/:/g, '');
+    }
+
     let getPlaintextDOMElement = () => document.getElementById('plaintext');
     let getPlaintext = () => getPlaintextDOMElement().value;
     let setPlaintext = value => getPlaintextDOMElement().value = value;
@@ -459,6 +495,10 @@ span.error:empty:before {
 
     let getPBKDF2IterationsDOMElement = () => document.getElementById('pbkdf2-iterations');
     let getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
+
+    let getDownloadCleartextButtonDOMElement = () => document.getElementById('download-cleartext');
+    let getDownloadCiphertextButtonDOMElement = () => document.getElementById('download-ciphertext');
+    let getDownloadDialogAnchorDOMElement = () => document.getElementById('download-dialog-anchor');
 
     let getCiphertextErrorMessageDOMElement = () => document.getElementById('ciphertext-error-message');
     let getCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText.trim();
@@ -518,6 +558,27 @@ span.error:empty:before {
 
     document.querySelector('.advanced-options-legend').addEventListener('click', ev => {
         return document.querySelector('.advanced-options').classList.toggle('is-active');
+    });
+
+    getDownloadCiphertextButtonDOMElement().addEventListener('click', ev => {
+        ev.preventDefault();
+
+        willRequestEncryption()
+        .then(encryptedBox => {
+            const blob = new Blob([encryptedBox], {type: "plain/text"});
+            const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
+
+            triggerDownloadDialog(blob, filename);
+        });
+    });
+
+    getDownloadCleartextButtonDOMElement().addEventListener('click', ev => {
+        ev.preventDefault();
+
+        const blob = new Blob([getPlaintext()], {type: "plain/text"});
+        const filename = makeDateTimePrefix(new Date()) + '_cleartext_vanillacrypto.txt';
+
+        triggerDownloadDialog(blob, filename);
     });
 
 </script>
