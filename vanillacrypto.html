@@ -292,6 +292,11 @@ button {
     }
 
     function willGenerateKeyPBKDF2(secret) {
+        if (!secret) {
+            // Firefox doesn't allow it, Chrome does. Let's make it consistent.
+            throw new Error('Cannot generate a key with an empty secret');
+        }
+
         return crypto.subtle.importKey(
             'raw',
             stringToUint8Array(secret),
