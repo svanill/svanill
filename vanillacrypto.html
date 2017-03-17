@@ -49,14 +49,6 @@ legend {
     flex-wrap: wrap;
 }
 
-.options-container {
-    display: flex;
-    flex: 1 1 100%;
-    align-items: center;
-    flex-wrap: wrap;
-    flex-direction: column;
-}
-
 .pbkdf2-options {
     display: flex;
     flex: 1 1 100%;
@@ -92,7 +84,9 @@ legend {
 
 .secret-container {
     display: flex;
-    align-items: center;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .iv-container {
@@ -219,20 +213,18 @@ button {
 </div>
 
 <div class="main-container">
-    <div class="options-container">
-        <span class="secret-container">
-            <label>Password <input id="secret" type="password" class="change-ciphertext" /></label>
-            <input
-                id="show-secret"
-                type="checkbox"
-                onchange="document.getElementById('secret').type = this.checked ? 'text' : 'password'"
-                title="Show password"
-                autocomplete="off"
-            />
-            <label for="show-secret">👁</label>
-        </span>
-
+    <div class="secret-container">
+        <label>Password <input id="secret" type="password" class="change-ciphertext" /></label>
+        <input
+            id="show-secret"
+            type="checkbox"
+            onchange="document.getElementById('secret').type = this.checked ? 'text' : 'password'"
+            title="Show password"
+            autocomplete="off"
+        />
+        <label for="show-secret">👁</label>
     </div>
+
     <div class="plaintext-container">
         <h2>Plaintext</h2>
         <span id="plaintext-error-message" class="error"></span>
