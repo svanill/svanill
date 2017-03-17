@@ -3,11 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <script>
-// Salt, a random string, at least 8 characters long. It ensures that
-// the derived key will be different even if two people have the same
-// password.
+// Salt, it ensures that two people with the same password will generate
+// different secret keys. It should be at least 8 random characters long.
 const PBKDF2_SALT = new URLSearchParams(document.location.search).get('salt')
-      || '';
+      || ''; // <== insert the salt inside the two '' on the far left
 // Iteration count for PBKDF2. At least 10000. The higher the value
 // the longer you'll need to wait after entering the password to
 // derive the key used for encryption.
@@ -200,9 +199,24 @@ button {
     background-color: green;
 }
 
+#salt-is-missing {
+    display: none;
+    color: #dc2e2e;
+    background-color: #fff799;
+    margin-bottom: 1em;
+    padding: 0.3em;
+    font-weight: bold;
+    text-align: center;
+}
+
 </style>
 </head>
 <body spellcheck="false">
+
+<div id="salt-is-missing">
+    You didn't set a "salt". Open the file and read the instructions near
+    PBKDF2_SALT or pass the query parameter "salt".
+</div>
 
 <div class="main-container">
     <div class="options-container">
@@ -506,6 +520,8 @@ button {
     let getDownloadCiphertextButtonDOMElement = () => document.getElementById('download-ciphertext');
     let getDownloadDialogAnchorDOMElement = () => document.getElementById('download-dialog-anchor');
 
+    let getSaltIsMissingDOMElement = () => document.getElementById('salt-is-missing');
+
     let getCiphertextErrorMessageDOMElement = () => document.getElementById('ciphertext-error-message');
     let getCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText.trim();
     let setCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText = message;
@@ -586,6 +602,11 @@ button {
 
         triggerDownloadDialog(blob, filename);
     });
+
+    if (!PBKDF2_SALT) {
+        getSaltIsMissingDOMElement().style.display = 'block';
+    }
+
 
 </script>
 </body>
