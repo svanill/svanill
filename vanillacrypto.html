@@ -6,11 +6,13 @@
 // Salt, a random string, at least 8 characters long. It ensures that
 // the derived key will be different even if two people have the same
 // password.
-const PBKDF2_SALT = '';
+const PBKDF2_SALT = new URLSearchParams(document.location.search).get('salt')
+      || '';
 // Iteration count for PBKDF2. At least 10000. The higher the value
 // the longer you'll need to wait after entering the password to
 // derive the key used for encryption.
-const PBKDF2_ITERATIONS = 60000;
+const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations')
+      || 60000;
 </script>
 <style>
 
