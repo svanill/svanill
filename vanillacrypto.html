@@ -451,9 +451,10 @@ button {
             iterations: getPBKDF2Iterations(),
         };
 
-        if (ciphertext === '') {
-            setPlaintext('');
-            return;
+        if (!ciphertext) {
+            return Promise.resolve({
+                plaintext: '',
+            });
         }
 
         return willDecryptCiphertext(ciphertext, secret, optionsPBKDF2)
