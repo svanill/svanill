@@ -559,15 +559,19 @@ button {
         });
     });
 
+    function updatePlaintextFromCiphertext() {
+        clearErrorMessages();
+        willRequestDecryption()
+        .then(function (result) {
+            setPlaintext(result.plaintext);
+        }).catch(e => {
+            console.error('cannot decode ciphertext', e);
+        });
+    }
+
     // redo decryption if the ciphertext has changed (or may have changed)
     ['input', 'focus'].forEach(eventType => {
-        getCiphertextDOMElement().addEventListener(eventType, ev => {
-            clearErrorMessages();
-            willRequestDecryption()
-            .then(function (result) {
-                setPlaintext(result.plaintext);
-            });
-        });
+        getCiphertextDOMElement().addEventListener(eventType, ev => updatePlaintextFromCiphertext())
     });
 
     document.querySelector('.advanced-options-legend').addEventListener('click', ev => {
