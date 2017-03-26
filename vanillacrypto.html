@@ -12,6 +12,11 @@ const PBKDF2_SALT = new URLSearchParams(document.location.search).get('salt')
 // derive the key used for encryption.
 const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations')
       || 60000;
+// Url fo the service (an instance of Piggy Store) where you could optionally
+// store your encrypted data
+const STORE_URL = 'http://localhost:5000';
+// How you want to name the file on the storage server that will hold your data.
+const FILENAME = 'main';
 </script>
 <style>
 
@@ -225,6 +230,11 @@ button {
         <label for="show-secret">👁</label>
     </div>
 
+    <div class="username-container">
+        <label>Username <input id="username" type="text" value="foobar" /></label>
+        <label>Confirm password <input id="confirm-secret" type="text" /></label>
+    </div>
+
     <div class="plaintext-container">
         <h2>Plaintext</h2>
         <span id="plaintext-error-message" class="error"></span>
@@ -236,11 +246,15 @@ button {
         <textarea id="ciphertext" autocomplete="off"></textarea>
     </div>
 
-    <div class="actions">
+    <div class="local-actions">
         <button id="download-cleartext">Download clear text</button>
         <button id="download-ciphertext">Download encrypted</button>
         <!-- invisible anchor used to trigger the download dialog -->
         <a id ="download-dialog-anchor" href="" style="display:none"></a>
+    </div>
+
+    <div class="external-actions">
+        <button id="upload-ciphertext">Save encrypted text</button>
     </div>
 
     <fieldset class="advanced-options">
@@ -508,11 +522,20 @@ button {
     let getPBKDF2IterationsDOMElement = () => document.getElementById('pbkdf2-iterations');
     let getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
 
+    let getFilename = () => FILENAME;
+
     let getDownloadCleartextButtonDOMElement = () => document.getElementById('download-cleartext');
     let getDownloadCiphertextButtonDOMElement = () => document.getElementById('download-ciphertext');
     let getDownloadDialogAnchorDOMElement = () => document.getElementById('download-dialog-anchor');
 
+    let getUploadCiphertextButtonDOMElement = () => document.getElementById('upload-ciphertext');
+
     let getSaltIsMissingDOMElement = () => document.getElementById('salt-is-missing');
+
+    let getUsernameDOMElement = () => document.getElementById('username');
+    let getUsername = () => getUsernameDOMElement().value;
+    let getConfirmSecretDOMElement = () => document.getElementById('confirm-secret');
+    let getConfirmSecret = () => getConfirmSecretDOMElement().value;
 
     let getCiphertextErrorMessageDOMElement = () => document.getElementById('ciphertext-error-message');
     let getCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText.trim();
@@ -599,10 +622,157 @@ button {
         triggerDownloadDialog(blob, filename);
     });
 
+    async function willGetAuthToken() {
+        let token = null;
+        let url = new URL(STORE_URL + '/user/auth/request-challenge');
+        url.searchParams.append('username', getUsername());
+
+        let parsedResponse = await fetchJSON(url.href);
+
+        let finalResponse = null;
+
+        if (parsedResponse.status === 401) {
+            // user does not exist
+            if (!window.confirm('No user found with that username, would you like to create it?')) {
+                throw new Error('User refused to create an account');
+            }
+
+            if (getConfirmSecret() !== getSecret()) {
+                window.alert('The passwords don\'t match');
+                throw new Error('password mismatch');
+            }
+
+            finalResponse = await willCreateNewUser();
+        } else if (parsedResponse.status === 200) {
+            // user exists, we've got a challenge to decrypt
+            let challenge = parsedResponse.content.challenge
+            finalResponse = await willAnswerChallenge(challenge);
+
+        } else {
+            throw new Error(JSON.stringify(parsedResponse));
+        }
+
+        return finalResponse.content.token;
+    }
+
+    async function willAnswerChallenge(challenge) {
+        let answerBox = await willDecryptCiphertext(challenge, getSecret());
+        let answer = answerBox.plaintext;
+
+        let url = new URL(STORE_URL + '/user/auth/answer-challenge');
+        return fetchJSON(url.href, {
+            method: 'POST',
+            body: JSON.stringify({
+                username: getUsername(),
+                answer,
+            }),
+        });
+    }
+
+    async function willCreateNewUser() {
+        // create a 32 char length random hex string
+        let b_answer = window.crypto.getRandomValues(new Uint8Array(16));
+        let h_answer = Array.prototype.map.call(b_answer, x => ('00' + x.toString(16)).slice(-2)).join('');
+
+        let url = new URL(STORE_URL + '/user/');
+        return fetchJSON(url.href, {
+            method: 'POST',
+            body: JSON.stringify({
+                username: getUsername(),
+                challenge: await willRequestEncryption(h_answer),
+                answer: h_answer,
+            }),
+        });
+    }
+
+    getUploadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
+        ev.preventDefault();
+
+        let filename = getFilename();
+
+        try {
+            let ciphertext = await willRequestEncryption(getPlaintext()); // XXX this way we upload something different from what the user sees !!!!
+            let uploadUrl = await willRequestUploadUrl(filename);
+            let objectUrl = uploadUrl.replace(/\?.*$/, ''); // XXX this is not safe probably
+            await willUploadCiphertext(uploadUrl, ciphertext);
+            let uploadedContent = await willDownload(objectUrl);
+            if (uploadedContent !== ciphertext) {
+                throw new Error('The uploaded file does not match the original file');
+            }
+            console.log('Cool, the file was uploaded correctly!');
+        } catch (e) {
+            console.error('An error arised', e);
+        }
+    });
+
+    async function willRequestUploadUrl(filename) {
+        let href = STORE_URL + '/file/request-upload-url';
+        let token = await willGetAuthToken();
+        return fetchJSON(href, {
+            method: 'POST',
+            body: JSON.stringify({
+                jwt: token,
+                filename: filename,
+            }),
+        })
+        .then(jsonResponse => jsonResponse.links.upload_url.href);
+    }
+
+    async function willUploadCiphertext(uploadUrl, ciphertext) {
+        let href = uploadUrl;
+        let token = await willGetAuthToken();
+        return fetch(href, {
+            headers: {
+                'Cache-Control': 'None',
+                'Expect': '100-continue',
+                'Content-Encoding': 'utf-8',
+                'Content-Type': 'text/plain',
+                // XXX ... no md5 in crypto subtle, so we can't rely on it.
+                // We'll have to download the file and verify his content later
+                // 'Content-MD5': 'application/json',
+            },
+            method: 'PUT',
+            body: ciphertext,
+        });
+    }
+
+    function willDownload(href) {
+        return fetch(href, {
+            mode: 'cors',
+            cache: 'no-store',
+            referrerPolicy: 'no-referrer',
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            } else {
+                return Promise.reject(response.statusText);
+            }
+        });
+    }
+
+    async function fetchJSON(href, options) {
+        options = Object.assign({}, {
+            headers: {},
+            mode: 'cors',
+            cache: 'no-store',
+            referrerPolicy: 'no-referrer',
+        }, options || {});
+
+        options.headers['Content-Type'] = 'application/json';
+
+        let response = await fetch(href, options);
+
+        if (response.headers.get('Content-Type') === 'application/json') {
+            return response.json();
+        } else {
+            throw new Error(response.statusText);
+        }
+    }
+
     if (!PBKDF2_SALT) {
         getSaltIsMissingDOMElement().style.display = 'block';
     }
-
 
 </script>
 </body>
