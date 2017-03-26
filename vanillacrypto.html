@@ -351,24 +351,19 @@ button {
         });
     }
 
-    function willDecryptAESGCM(key, encTransportBlock) {
-        const [ad_b64 = '', iv_b64 = '', ciphertextPlusTag_b64 = ''] = encTransportBlock.split('.');
-        const additionalData = u_atob(ad_b64);
-        const iv = u_atob(iv_b64);
-        const ciphertextPlusTag = u_atob(ciphertextPlusTag_b64);
-
+    function willDecryptAESGCM(b_key, b_iv, b_ad, b_enc) {
         return crypto.subtle.decrypt(
             {
                 name: 'AES-GCM',
-                iv,
-                additionalData,
+                iv: b_iv,
+                additionalData: b_ad,
             },
-            key,
-            ciphertextPlusTag
+            b_key,
+            b_enc
         ).then(dec => ({
             plaintext: bufToString(dec),
-            additionalData: JSON.parse(bufToString(additionalData)),
-            iv,
+            additionalData: JSON.parse(bufToString(b_ad)),
+            iv: b_iv,
         }));
     }
 
@@ -421,13 +416,22 @@ button {
      *              - number iterations the number of PBKDF2 iterations used to derive the key
      * @return Promise that will resolve to an object with key plaintext, whose value is the plaintext as string
      */
-    function willDecryptCiphertext(ciphertext, secret, optionsPBKDF2) {
+    function willDecryptCiphertext(encryptedBox, secret) {
+        let [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
+        let [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
+        let ad = JSON.parse(bufToString(b_ad));
+
+        let optionsPBKDF2 = {
+            salt: ad.salt || '',
+            iterations: ad.iterations || '',
+        };
+
         return willGenerateKeyPBKDF2(secret)
         .then(function (baseKey) {
             return willDeriveKey(baseKey, optionsPBKDF2);
         })
         .then(function (derivedKey) {
-            return willDecryptAESGCM(derivedKey, ciphertext);
+            return willDecryptAESGCM(derivedKey, b_iv, b_ad, b_enc);
         });
     }
 
@@ -445,11 +449,6 @@ button {
 
     function willRequestDecryption() {
         let ciphertext = getCiphertext();
-        let secret = getSecret();
-        let optionsPBKDF2 = {
-            salt: getPBKDF2Salt(),
-            iterations: getPBKDF2Iterations(),
-        };
 
         if (!ciphertext) {
             return Promise.resolve({
@@ -457,7 +456,8 @@ button {
             });
         }
 
-        return willDecryptCiphertext(ciphertext, secret, optionsPBKDF2)
+        let secret = getSecret();
+        return willDecryptCiphertext(ciphertext, secret)
         .catch(function(e) {
             setCiphertextErrorMessage('The operation failed (most likely the ciphertext is not correct)');
             setPlaintextErrorMessage(
