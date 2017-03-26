@@ -435,9 +435,8 @@ button {
         });
     }
 
-    function willRequestEncryption() {
+    function willRequestEncryption(plaintext) {
         let secret = getSecret();
-        let plaintext = getPlaintext();
         let iv = window.crypto.getRandomValues(new Uint8Array(16));
         let optionsPBKDF2 = {
             salt: getPBKDF2Salt(),
@@ -538,7 +537,7 @@ button {
     getPlaintextDOMElement().addEventListener('focus', ev => {
         if (hasErrors()) {
             clearErrorMessages();
-            willRequestEncryption()
+            willRequestEncryption(getPlaintext())
             .then(setCiphertext);
         }
     });
@@ -555,7 +554,7 @@ button {
 
         elem.addEventListener(eventType, ev => {
             clearErrorMessages();
-            willRequestEncryption()
+            willRequestEncryption(getPlaintext())
             .then(setCiphertext);
         });
     });
@@ -582,7 +581,7 @@ button {
     getDownloadCiphertextButtonDOMElement().addEventListener('click', ev => {
         ev.preventDefault();
 
-        willRequestEncryption()
+        willRequestEncryption(getPlaintext())
         .then(encryptedBox => {
             const blob = new Blob([encryptedBox], {type: "plain/text"});
             const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
