@@ -255,6 +255,7 @@ button {
 
     <div class="external-actions">
         <button id="upload-ciphertext">Save encrypted text</button>
+        <button id="reload-ciphertext">Load encrypted text</button>
     </div>
 
     <fieldset class="advanced-options">
@@ -529,6 +530,7 @@ button {
     let getDownloadDialogAnchorDOMElement = () => document.getElementById('download-dialog-anchor');
 
     let getUploadCiphertextButtonDOMElement = () => document.getElementById('upload-ciphertext');
+    let getReloadCiphertextButtonDOMElement = () => document.getElementById('reload-ciphertext');
 
     let getSaltIsMissingDOMElement = () => document.getElementById('salt-is-missing');
 
@@ -620,6 +622,13 @@ button {
         const filename = makeDateTimePrefix(new Date()) + '_cleartext_vanillacrypto.txt';
 
         triggerDownloadDialog(blob, filename);
+    });
+
+    getReloadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
+        ev.preventDefault();
+        let ciphertext = await willGetFirstFileContent();
+        setCiphertext(ciphertext);
+        updatePlaintextFromCiphertext();
     });
 
     async function willGetAuthToken() {
@@ -749,6 +758,19 @@ button {
                 return Promise.reject(response.statusText);
             }
         });
+    }
+
+    async function willGetFilesList() {
+        let url = new URL(STORE_URL + '/files/')
+        url.searchParams.append('jwt', await willGetAuthToken());
+
+        let jsonResponse = await fetchJSON(url.href);
+        return jsonResponse.content;
+    }
+
+    async function willGetFirstFileContent() {
+        let files = await willGetFilesList();
+        return files.length > 0 ? await willDownload(files[0].links.read.href) : '';
     }
 
     async function fetchJSON(href, options) {
