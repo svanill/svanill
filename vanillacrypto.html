@@ -26,25 +26,15 @@ html {
 
 body {
     box-sizing: border-box;
-    width: 100%;
+    max-width: 1200px;
     padding: 1em;
     margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 input[type=checkbox] {
     margin: 0;
-}
-
-fieldset {
-    margin: 0;
-    padding: 1em;
-    border: 0;
-}
-
-legend {
-    margin: 0;
-    padding: 0;
-    font-weight: bold;
 }
 
 .main-container {
@@ -54,23 +44,15 @@ legend {
     flex-wrap: wrap;
 }
 
-.informations {
-    display: block;
-    flex: 1 1 100%;
-    margin-top: 1em;
-}
-
-.secret-container {
-    display: flex;
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-    justify-content: center;
+.secret-container,
+#label-confirm-secret,
+#label-username {
+    flex: 1 1 30%;
 }
 
 #secret {
     box-sizing: border-box;
     padding: 0 0.2em;
-    width: 30em;
     margin-right: 0.2em;
 }
 
@@ -95,15 +77,20 @@ input[type=text], input[type=password] {
 }
 
 .plaintext-container, .ciphertext-container {
+    box-sizing: border-box;
+    padding: 0 1em;
     display: flex;
-    flex: 1 1 35%;
-    flex-direction: column;
-    align-items: center;
+    flex: 1 1 50%;
+    flex-wrap: wrap;
+}
+
+.plaintext-container > textarea,
+.ciphertext-container > textarea {
+    flex: 1 1 100%;
 }
 
 #plaintext, #ciphertext {
     min-height: 400px;
-    width: 90%;
 }
 
 .error {
@@ -112,11 +99,6 @@ input[type=text], input[type=password] {
 
 span.error:empty:before {
     content: "\200b"; /* unicode zero width space character */
-}
-
-.field-name {
-    display: flex;
-    flex: 0.2;
 }
 
 #download-cleartext {
@@ -146,46 +128,43 @@ button {
     PBKDF2_SALT or pass the query parameter "salt".
 </div>
 
-<div class="main-container">
-    <div class="secret-container">
-        <label>Password <input id="secret" type="password" class="change-ciphertext" /></label>
-        <input
-            id="show-secret"
-            type="checkbox"
-            onchange="document.getElementById('secret').type = this.checked ? 'text' : 'password'"
-            title="Show password"
-            autocomplete="off"
-        />
-        <label for="show-secret">👁</label>
-    </div>
+<span class="secret-container">
+    <label>Password <input id="secret" type="password" class="change-ciphertext" /></label>
+    <input
+        id="show-secret"
+        type="checkbox"
+        onchange="document.getElementById('secret').type = this.checked ? 'text' : 'password'"
+        title="Show password"
+        autocomplete="off"
+    />
+    <label for="show-secret">👁</label>
+</span>
 
-    <div class="username-container">
-        <label>Username <input id="username" type="text" value="foobar" /></label>
-        <label>Confirm password <input id="confirm-secret" type="text" /></label>
-    </div>
+<label id="label-confirm-secret">Confirm password <input id="confirm-secret" type="password" /></label>
+<label id="label-username">Username <input id="username" type="text" value="foobar" /></label>
 
-    <div class="plaintext-container">
-        <h2>Plaintext</h2>
-        <span id="plaintext-error-message" class="error"></span>
-        <textarea id="plaintext" class="change-ciphertext" autocomplete="off"></textarea>
-    </div>
-    <div class="ciphertext-container">
-        <h2>Ciphertext</h2>
-        <span id="ciphertext-error-message" class="error"></span>
-        <textarea id="ciphertext" autocomplete="off"></textarea>
-    </div>
+<div class="plaintext-container">
+    <h2>Plaintext</h2>
+    <span id="plaintext-error-message" class="error"></span>
+    <textarea id="plaintext" class="change-ciphertext" autocomplete="off"></textarea>
+</div>
 
-    <div class="local-actions">
-        <button id="download-cleartext">Download clear text</button>
-        <button id="download-ciphertext">Download encrypted</button>
-        <!-- invisible anchor used to trigger the download dialog -->
-        <a id ="download-dialog-anchor" href="" style="display:none"></a>
-    </div>
+<div class="ciphertext-container">
+    <h2>Ciphertext</h2>
+    <span id="ciphertext-error-message" class="error"></span>
+    <textarea id="ciphertext" autocomplete="off"></textarea>
+</div>
 
-    <div class="external-actions">
-        <button id="upload-ciphertext">Save encrypted text</button>
-        <button id="reload-ciphertext">Load encrypted text</button>
-    </div>
+<div class="local-actions">
+    <button id="download-cleartext">Download clear text</button>
+    <button id="download-ciphertext">Download encrypted</button>
+    <!-- invisible anchor used to trigger the download dialog -->
+    <a id ="download-dialog-anchor" href="" style="display:none"></a>
+</div>
+
+<div class="external-actions">
+    <button id="upload-ciphertext">Save encrypted text</button>
+    <button id="reload-ciphertext">Load encrypted text</button>
 </div>
 
 <script>
