@@ -631,7 +631,7 @@ button {
         updatePlaintextFromCiphertext();
     });
 
-    async function willGetAuthToken() {
+    async function _willGetAuthToken() {
         let token = null;
         let url = new URL(STORE_URL + '/user/auth/request-challenge');
         url.searchParams.append('username', getUsername());
@@ -664,12 +664,29 @@ button {
         return finalResponse.content.token;
     }
 
+    /**
+     * Retrieve an authorization token.
+     *
+     * The token is cached unless the option {refresh: true} is provided.
+     * Use fetchJSONWithRetryOnAuthExpired() to automatically refresh it.
+     */
+    let willGetAuthToken = (() => {
+        let token = null;
+
+        return async function(options) {
+            if (!token || (options || {}).refresh) {
+                token = await _willGetAuthToken();
+            }
+            return token;
+        }
+    })();
+
     async function willAnswerChallenge(challenge) {
         let answerBox = await willDecryptCiphertext(challenge, getSecret());
         let answer = answerBox.plaintext;
 
         let url = new URL(STORE_URL + '/user/auth/answer-challenge');
-        return fetchJSON(url.href, {
+        return fetchJSONWithRetryOnAuthExpired(url.href, {
             method: 'POST',
             body: JSON.stringify({
                 username: getUsername(),
@@ -717,7 +734,8 @@ button {
     async function willRequestUploadUrl(filename) {
         let href = STORE_URL + '/file/request-upload-url';
         let token = await willGetAuthToken();
-        return fetchJSON(href, {
+
+        return fetchJSONWithRetryOnAuthExpired(href, {
             method: 'POST',
             body: JSON.stringify({
                 jwt: token,
@@ -729,7 +747,6 @@ button {
 
     async function willUploadCiphertext(uploadUrl, ciphertext) {
         let href = uploadUrl;
-        let token = await willGetAuthToken();
         return fetch(href, {
             headers: {
                 'Cache-Control': 'None',
@@ -764,13 +781,23 @@ button {
         let url = new URL(STORE_URL + '/files/')
         url.searchParams.append('jwt', await willGetAuthToken());
 
-        let jsonResponse = await fetchJSON(url.href);
+        let jsonResponse = await fetchJSONWithRetryOnAuthExpired(url.href);
         return jsonResponse.content;
     }
 
     async function willGetFirstFileContent() {
         let files = await willGetFilesList();
         return files.length > 0 ? await willDownload(files[0].links.read.href) : '';
+    }
+
+    async function fetchJSONWithRetryOnAuthExpired(href, options) {
+        let response = await fetchJSON(href, options);
+        if (response.error && response.error.code === 1007) {
+            // 1007 means "token expired"
+            await willGetAuthToken({refresh: true});
+            response = await fetchJSON(href, options);
+        }
+        return response;
     }
 
     async function fetchJSON(href, options) {
