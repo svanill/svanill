@@ -54,33 +54,6 @@ legend {
     flex-wrap: wrap;
 }
 
-.pbkdf2-options {
-    display: flex;
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-}
-
-.pbkdf2-salt-line {
-    display: flex;
-    flex: 1 1 100%;
-    align-items: center;
-}
-
-.pbkdf2-salt-line > input{
-    flex: 1;
-}
-
-.pbkdf2-iterations-line {
-    display: flex;
-    flex: 1 1 100%;
-    align-items: center;
-}
-
-.pbkdf2-iterations-line > input{
-    flex: 1;
-}
-
-
 .informations {
     display: block;
     flex: 1 1 100%;
@@ -92,17 +65,6 @@ legend {
     flex: 1 1 100%;
     flex-wrap: wrap;
     justify-content: center;
-}
-
-.iv-container {
-    display: flex;
-    flex: 1 1 100%;
-    flex-direction: row;
-    align-items: center;
-}
-
-.iv-container > label {
-    margin-right: 1em;
 }
 
 #secret {
@@ -150,39 +112,6 @@ input[type=text], input[type=password] {
 
 span.error:empty:before {
     content: "\200b"; /* unicode zero width space character */
-}
-
-.advanced-options {
-    display: flex;
-    flex: 1 1 100%;
-    margin-top: 1em;
-    flex-direction: column;
-    align-items: center;
-}
-
-.advanced-options .content {
-    transition: max-height 0.4s ease-out;
-    max-height: 0;
-    opacity: 1;
-    overflow: hidden;
-}
-
-.advanced-options.is-active .content {
-    max-height: 300px;
-    opacity: 1;
-}
-
-.advanced-options .toggle-icon {
-    transition: transform 0.4s;
-    display: inline-block;
-}
-
-.advanced-options.is-active .toggle-icon {
-    transform: rotate(90deg);
-}
-
-.advanced-options-legend {
-    cursor: pointer;
 }
 
 .field-name {
@@ -257,39 +186,6 @@ button {
         <button id="upload-ciphertext">Save encrypted text</button>
         <button id="reload-ciphertext">Load encrypted text</button>
     </div>
-
-    <fieldset class="advanced-options">
-        <legend class="advanced-options-legend"><span class="toggle-icon">▶</span> Advanced options</legend>
-
-        <div class="content">
-
-            <fieldset>
-                <legend>Key derivation function - PBKDF2</legend>
-                <div class="pbkdf2-options">
-                    <label class="pbkdf2-salt-line">
-                        <span class="field-name">Salt</span>
-                        <span id="pbkdf2-salt"></span>
-                    </label>
-                    <label class="pbkdf2-iterations-line">
-                        <span class="field-name">Iterations</span>
-                        <span id="pbkdf2-iterations"></span>
-                    </label>
-                </div>
-            </fieldset>
-
-            <fieldset>
-                <legend>Encryption</legend>
-                <div class="iv-options">
-                    <span class="iv-container">
-                        <label>IV (initialization vector)
-                            <span id="iv"></span>
-                        </label>
-                    </span>
-                </div>
-            </fieldset>
-        </div>
-
-    </fieldset>
 </div>
 
 <script>
@@ -514,15 +410,8 @@ button {
     let getSecretDOMElement = () => document.getElementById('secret');
     let getSecret = () => getSecretDOMElement().value;
 
-    let getIVDOMElement = () => document.getElementById('iv');
-    let setIVLabel = value => getIVDOMElement().innerText = value;
-
-    let getPBKDF2SaltDOMElement = () => document.getElementById('pbkdf2-salt');
     let getPBKDF2Salt = () => PBKDF2_SALT;
-
-    let getPBKDF2IterationsDOMElement = () => document.getElementById('pbkdf2-iterations');
     let getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
-
     let getFilename = () => FILENAME;
 
     let getDownloadCleartextButtonDOMElement = () => document.getElementById('download-cleartext');
@@ -553,9 +442,6 @@ button {
     };
 
     let hasErrors = () => Boolean(getPlaintextErrorMessage() || getCiphertextErrorMessage());
-
-    getPBKDF2SaltDOMElement().innerText = getPBKDF2Salt() || '<empty>';
-    getPBKDF2IterationsDOMElement().innerText = getPBKDF2Iterations();
 
     // encrypt on focus only when there are errors, otherwise with a random IV we would
     // change the ciphertext without reason
@@ -597,10 +483,6 @@ button {
     // redo decryption if the ciphertext has changed (or may have changed)
     ['input', 'focus'].forEach(eventType => {
         getCiphertextDOMElement().addEventListener(eventType, ev => updatePlaintextFromCiphertext())
-    });
-
-    document.querySelector('.advanced-options-legend').addEventListener('click', ev => {
-        return document.querySelector('.advanced-options').classList.toggle('is-active');
     });
 
     getDownloadCiphertextButtonDOMElement().addEventListener('click', ev => {
@@ -819,7 +701,7 @@ button {
         }
     }
 
-    if (!PBKDF2_SALT) {
+    if (!getPBKDF2Salt()) {
         getSaltIsMissingDOMElement().style.display = 'block';
     }
 
