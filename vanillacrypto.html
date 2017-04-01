@@ -23,6 +23,8 @@ const FILENAME = 'main';
 html {
     background-color: #cad8d9;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
+    background: #32393F;
+    height: 100%;
 }
 
 body {
@@ -32,6 +34,8 @@ body {
     margin: 0 auto;
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
+    height: 100%;
 }
 
 input[type=checkbox] {
@@ -45,12 +49,6 @@ input[type=checkbox] {
     flex-wrap: wrap;
 }
 
-.secret-container,
-#label-confirm-secret,
-#label-username {
-    flex: 1 1 30%;
-}
-
 #secret {
     box-sizing: border-box;
     padding: 0 0.2em;
@@ -59,14 +57,6 @@ input[type=checkbox] {
 
 label {
     cursor: pointer;
-}
-
-#show-secret {
-    display: none;
-}
-
-#show-secret:checked + label{
-    color: red;
 }
 
 textarea, button {
@@ -111,7 +101,8 @@ span.error:empty:before {
 }
 
 button {
-    background-color: green;
+    font-weight:bold;
+    cursor: pointer;
 }
 
 #salt-is-missing {
@@ -151,34 +142,142 @@ textarea:focus::placeholder {
     color: transparent;
 }
 
+.page-load {
+    animation: fadein 1000ms;
+}
+
+@keyframes fadein {
+    from { opacity: 0}
+    to   { opacity: 1}
+}
+
+#login-dialog {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-direction: column;
+}
+
+.input-group {
+    position: relative;
+    height: 1.3em;
+    width: 300px;
+    margin-bottom: 2em;
+}
+
+.ig-text {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    color: white;
+    z-index: 2;
+    box-sizing: border-box;
+    border-bottom: 2px solid #696969;
+}
+
+.ig-text ~ .ig-helpers {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background-color: white;
+    visibility: hidden;
+    transform: scaleX(0);
+    transition: all 0.3s ease-in-out 0s;
+}
+
+.ig-text:focus ~ .ig-helpers {
+    visibility: visible;
+    transform: scaleX(1);
+}
+
+.ig-label {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.ig-text:invalid {
+    box-shadow: none;
+}
+
+.ig-text:focus ~ .ig-label,
+.ig-text:valid ~ .ig-label {
+    transform: translate(0, -16px) scale(.9);
+    font-size: 0.8em;
+}
+
+#login-dialog {
+    display: none;
+}
+
+.require-login .main-container {
+    display: none;
+}
+
+.require-login #login-dialog {
+    display: flex;
+}
+
+#logout-btn {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+}
+
 </style>
 </head>
-<body spellcheck="false">
+<body spellcheck="false" class="require-login">
 
 <div id="salt-is-missing">
     You didn't set a "salt". Open the file and read the instructions near
     PBKDF2_SALT or pass the query parameter "salt".
 </div>
 
-<span class="secret-container">
-    <label>Password <input id="secret" type="password" class="change-ciphertext" /></label>
-    <input
-        id="show-secret"
-        type="checkbox"
-        onchange="document.getElementById('secret').type = this.checked ? 'text' : 'password'"
-        title="Show password"
-        autocomplete="off"
-    />
-    <label for="show-secret">👁</label>
-</span>
+<div id="login-dialog" class="page-load">
+    <div class="input-group">
+        <input id="secret" type="password"
+            class="ig-text"
+            required=""
+            autocomplete="new-password" />
+        <i class="ig-helpers" ></i>
+        <label class="ig-label" for="secret">Password</label>
+    </div>
+    <div class="input-group">
+        <input id="confirm-secret" type="password"
+            class="ig-text"
+            required=""
+            autocomplete="new-password" />
+        <i class="ig-helpers" ></i>
+        <label class="ig-label" for="confirm-secret">Confirm Password</label>
+    </div>
+    <div class="input-group" >
+        <input id="username" type="text"
+            title="You can omit the username, but then you won't be able to access external services (e.g. to upload/sync your files)"
+            class="ig-text"
+            required=""
+            autocomplete="off" />
+        <i class="ig-helpers"></i>
+        <label class="ig-label" for="username">Username</label>
+    </div>
+    <button id="login-btn" type="submit" disabled="disabled" autocomplete="off">Unlock</button>
+</div>
 
-<label id="label-confirm-secret">Confirm password <input id="confirm-secret" type="password" /></label>
-<label id="label-username">Username <input id="username" type="text" value="foobar" /></label>
+<div class="main-container">
+
+<button id="logout-btn">Logout</button>
 
 <div class="plaintext-container">
     <h2>Plaintext</h2>
     <span id="plaintext-error-message" class="error"></span>
-    <textarea id="plaintext" class="change-ciphertext" autocomplete="off"></textarea>
+    <textarea id="plaintext" class="change-ciphertext" autocomplete="off" placeholder="Plaintext"></textarea>
 </div>
 
 <div class="ciphertext-container">
@@ -197,6 +296,8 @@ textarea:focus::placeholder {
 <div class="external-actions">
     <button id="upload-ciphertext">Save encrypted text</button>
     <button id="reload-ciphertext">Load encrypted text</button>
+</div>
+
 </div>
 
 <script>
@@ -432,6 +533,10 @@ textarea:focus::placeholder {
     let getUploadCiphertextButtonDOMElement = () => document.getElementById('upload-ciphertext');
     let getReloadCiphertextButtonDOMElement = () => document.getElementById('reload-ciphertext');
 
+    let getLoginButtonDOMElement = () => document.getElementById('login-btn');
+    let getLogoutButtonDOMElement = () => document.getElementById('logout-btn');
+    let getMainContainerDOMElement = () => document.getElementById('main-container');
+
     let getSaltIsMissingDOMElement = () => document.getElementById('salt-is-missing');
 
     let getUsernameDOMElement = () => document.getElementById('username');
@@ -519,9 +624,13 @@ textarea:focus::placeholder {
 
     getReloadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
         ev.preventDefault();
-        let ciphertext = await willGetFirstFileContent();
-        setCiphertext(ciphertext);
-        updatePlaintextFromCiphertext();
+        try {
+            let ciphertext = await willGetFirstFileContent();
+            setCiphertext(ciphertext);
+            updatePlaintextFromCiphertext();
+        } catch (e) {
+            console.error(e);
+        }
     });
 
     async function _willGetAuthToken() {
@@ -537,11 +646,6 @@ textarea:focus::placeholder {
             // user does not exist
             if (!window.confirm('No user found with that username, would you like to create it?')) {
                 throw new Error('User refused to create an account');
-            }
-
-            if (getConfirmSecret() !== getSecret()) {
-                window.alert('The passwords don\'t match');
-                throw new Error('password mismatch');
             }
 
             finalResponse = await willCreateNewUser();
@@ -715,6 +819,29 @@ textarea:focus::placeholder {
     if (!getPBKDF2Salt()) {
         getSaltIsMissingDOMElement().style.display = 'block';
     }
+
+
+    [getSecretDOMElement(), getConfirmSecretDOMElement()].forEach((elem) => {
+        let loginBtn = getLoginButtonDOMElement();
+
+        elem.addEventListener('input', () => {
+            loginBtn.disabled = getConfirmSecret() !== getSecret();
+        });
+    });
+
+    getLoginButtonDOMElement().addEventListener('click', () => {
+        if (getConfirmSecret() !== getSecret()) {
+            window.alert('The passwords don\'t match');
+        } else {
+            document.body.classList.remove('require-login');
+        }
+    });
+
+    getLogoutButtonDOMElement().addEventListener('click', () => {
+        document.location.reload();
+    });
+
+
 
 </script>
 </body>
