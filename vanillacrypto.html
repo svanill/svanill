@@ -232,9 +232,17 @@ textarea:focus::placeholder {
     right: 0.5em;
 }
 
+.enable-external-actions .external-actions {
+    display: flex;
+}
+
+.external-actions {
+    display: none;
+}
+
 </style>
 </head>
-<body spellcheck="false" class="require-login">
+<body spellcheck="false" class="require-login enable-external-actions">
 
 <div id="salt-is-missing">
     You didn't set a "salt". Open the file and read the instructions near
@@ -833,6 +841,14 @@ textarea:focus::placeholder {
         if (getConfirmSecret() !== getSecret()) {
             window.alert('The passwords don\'t match');
         } else {
+
+            if (getUsername()) {
+                // XXX verify user exists
+            } else {
+                document.body.classList.remove('enable-external-actions');
+            }
+
+
             document.body.classList.remove('require-login');
         }
     });
