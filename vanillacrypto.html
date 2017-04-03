@@ -38,6 +38,7 @@ body {
     height: 100%;
 }
 
+p,
 input[type=checkbox] {
     margin: 0;
 }
@@ -61,6 +62,18 @@ label {
 
 textarea, button {
     box-sizing: border-box;
+}
+
+button {
+    padding: 0 0.9em;
+}
+
+button::-moz-focus-inner,
+input[type="button"]::-moz-focus-inner,
+input[type="submit"]::-moz-focus-inner,
+input[type="reset"]::-moz-focus-inner {
+  padding: 0 !important;
+  border: 0 none !important;
 }
 
 input[type=text], input[type=password] {
@@ -240,6 +253,24 @@ textarea:focus::placeholder {
     display: none;
 }
 
+.action-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+button.action {
+    margin-bottom: 0.2em;
+}
+
+.action-bar .title {
+    font-weight: bold;
+    color: #af9f88;
+    text-shadow: 0 0 33px black;
+    font-size: 1.3em;
+}
+
 </style>
 </head>
 <body spellcheck="false" class="require-login enable-external-actions">
@@ -283,28 +314,26 @@ textarea:focus::placeholder {
 <button id="logout-btn">Logout</button>
 
 <div class="plaintext-container">
-    <h2>Plaintext</h2>
+    <p class="action-bar"><label class="title">Cleartext</label> <button id="download-cleartext" class="action">⬇ download</button></p>
     <span id="plaintext-error-message" class="error"></span>
-    <textarea id="plaintext" class="change-ciphertext" autocomplete="off" placeholder="Plaintext"></textarea>
+    <textarea id="plaintext" class="change-ciphertext" autocomplete="off" placeholder="Click here to type some text to encrypt"></textarea>
 </div>
 
 <div class="ciphertext-container">
-    <h2>Ciphertext</h2>
+    <p class="action-bar">
+    <label class="title">Ciphertext</label>
+    <span class="actions">
+    <button id="reload-ciphertext" class="external action">⟳ reload</button>
+    <button id="upload-ciphertext" class="external action">⬆ upload</button>
+    <button id="download-ciphertext" class="action"> ⬇ download</button>
+    </span>
+    </p>
     <span id="ciphertext-error-message" class="error"></span>
-    <textarea id="ciphertext" autocomplete="off"></textarea>
+    <textarea id="ciphertext" autocomplete="off" placeholder="Click here to paste some text to decrypt"></textarea>
 </div>
 
-<div class="local-actions">
-    <button id="download-cleartext">Download clear text</button>
-    <button id="download-ciphertext">Download encrypted</button>
-    <!-- invisible anchor used to trigger the download dialog -->
-    <a id ="download-dialog-anchor" href="" style="display:none"></a>
-</div>
-
-<div class="external-actions">
-    <button id="upload-ciphertext">Save encrypted text</button>
-    <button id="reload-ciphertext">Load encrypted text</button>
-</div>
+<!-- invisible anchor used to trigger the download dialog -->
+<a id ="download-dialog-anchor" href="" style="display:none"></a>
 
 </div>
 
