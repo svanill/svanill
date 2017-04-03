@@ -110,7 +110,7 @@ span.error:empty:before {
 }
 
 #download-cleartext {
-    background-color: red;
+    color: #af0303;
 }
 
 button {
@@ -143,12 +143,16 @@ textarea {
 }
 
 textarea:focus {
-    background: none repeat scroll 0 0 #FFFFFF;
+    background: none repeat scroll 0 0 rgb(194, 196, 198);
     outline-width: 0;
 }
 
+-webkit-input-placeholder,
 textarea::placeholder {
     font-weight: bold;
+    color: azure;
+    opacity: 0.5;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 textarea:focus::placeholder {
