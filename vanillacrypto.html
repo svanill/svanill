@@ -874,15 +874,17 @@ button.action {
         if (getConfirmSecret() !== getSecret()) {
             window.alert('The passwords don\'t match');
         } else {
-
-            if (getUsername()) {
-                // XXX verify user exists
-            } else {
-                document.body.classList.remove('enable-external-actions');
+            try {
+                if (getUsername()) {
+                    // auth, possibly ask to create the user
+                    let token = await _willGetAuthToken();
+                } else {
+                    document.body.classList.remove('enable-external-actions');
+                }
+                document.body.classList.remove('require-login');
+            } catch (e) {
+                displayError(e);
             }
-
-
-            document.body.classList.remove('require-login');
         }
     });
 
