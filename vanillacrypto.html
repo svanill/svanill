@@ -38,8 +38,7 @@ body {
     height: 100%;
 }
 
-p,
-input[type=checkbox] {
+p {
     margin: 0;
 }
 
@@ -275,6 +274,14 @@ button.action {
     font-size: 1.3em;
 }
 
+#error-bar {
+    line-height: 1.5em;
+}
+
+#error-bar:empty::after {
+    content: "\00a0"; /* non breaking space to force height even if empty */
+}
+
 </style>
 </head>
 <body spellcheck="false" class="require-login enable-external-actions">
@@ -319,7 +326,6 @@ button.action {
 
 <div class="plaintext-container">
     <p class="action-bar"><label class="title">Cleartext</label> <button id="download-cleartext" class="action">⬇ download</button></p>
-    <span id="plaintext-error-message" class="error"></span>
     <textarea id="plaintext" class="change-ciphertext" autocomplete="off" placeholder="Click here to type some text to encrypt"></textarea>
 </div>
 
@@ -332,12 +338,13 @@ button.action {
     <button id="download-ciphertext" class="action"> ⬇ download</button>
     </span>
     </p>
-    <span id="ciphertext-error-message" class="error"></span>
     <textarea id="ciphertext" autocomplete="off" placeholder="Click here to paste some text to decrypt"></textarea>
 </div>
 
 <!-- invisible anchor used to trigger the download dialog -->
 <a id ="download-dialog-anchor" href="" style="display:none"></a>
+
+<p id="error-bar" class="error"></p>
 
 </div>
 
@@ -481,22 +488,29 @@ button.action {
      * @return Promise that will resolve to an object with key plaintext, whose value is the plaintext as string
      */
     function willDecryptCiphertext(encryptedBox, secret) {
-        let [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
-        let [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
-        let ad = JSON.parse(bufToString(b_ad));
+        try {
+            let [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
+            let [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
 
-        let optionsPBKDF2 = {
-            salt: ad.salt || '',
-            iterations: ad.iterations || '',
-        };
+            let ad = JSON.parse(bufToString(b_ad));
 
-        return willGenerateKeyPBKDF2(secret)
-        .then(function (baseKey) {
-            return willDeriveKey(baseKey, optionsPBKDF2);
-        })
-        .then(function (derivedKey) {
-            return willDecryptAESGCM(derivedKey, b_iv, b_ad, b_enc);
-        });
+            let optionsPBKDF2 = {
+                salt: ad.salt || '',
+                iterations: ad.iterations || '',
+            };
+
+            return willGenerateKeyPBKDF2(secret)
+            .then(function (baseKey) {
+                return willDeriveKey(baseKey, optionsPBKDF2);
+            })
+            .then(function (derivedKey) {
+                return willDecryptAESGCM(derivedKey, b_iv, b_ad, b_enc);
+            });
+
+        } catch (e) {
+            return Promise.reject(e);
+        }
+
     }
 
     function willRequestEncryption(plaintext) {
@@ -520,15 +534,7 @@ button.action {
         }
 
         let secret = getSecret();
-        return willDecryptCiphertext(ciphertext, secret)
-        .catch(function(e) {
-            setCiphertextErrorMessage('The operation failed (most likely the ciphertext is not correct)');
-            setPlaintextErrorMessage(
-                'The plaintext does not reflect the ciphertext (focus the textarea to refresh)'
-            );
-
-            return Promise.reject(e);
-        });
+        return willDecryptCiphertext(ciphertext, secret);
     }
 
     function triggerDownloadDialog(blob, filename) {
@@ -585,56 +591,50 @@ button.action {
     let getConfirmSecretDOMElement = () => document.getElementById('confirm-secret');
     let getConfirmSecret = () => getConfirmSecretDOMElement().value;
 
-    let getCiphertextErrorMessageDOMElement = () => document.getElementById('ciphertext-error-message');
-    let getCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText.trim();
-    let setCiphertextErrorMessage = message => getCiphertextErrorMessageDOMElement().innerText = message;
-
-    let getPlaintextErrorMessageDOMElement = () => document.getElementById('plaintext-error-message');
-    let getPlaintextErrorMessage = message => getPlaintextErrorMessageDOMElement().innerText.trim();
-    let setPlaintextErrorMessage = message => getPlaintextErrorMessageDOMElement().innerText = message;
+    let getErrorBarDOMElement = () => document.getElementById('error-bar');
 
     let clearErrorMessages = () => {
-        setCiphertextErrorMessage('');
-        setPlaintextErrorMessage('');
+        getErrorBarDOMElement().innerText = '';
     };
 
-    let hasErrors = () => Boolean(getPlaintextErrorMessage() || getCiphertextErrorMessage());
+    let displayError = (e) => {
+        getErrorBarDOMElement().innerText = e.message;
+    };
 
-    // encrypt on focus only when there are errors, otherwise with a random IV we would
+    let hasErrors = () => getErrorBarDOMElement().innerText.trim() !== '';
+
+    let clearErrorsAndEncrypt = async function() {
+        clearErrorMessages();
+        try {
+            let ciphertext = await willRequestEncryption(getPlaintext());
+            setCiphertext(ciphertext);
+        } catch (e) {
+            displayError(e);
+        }
+    };
+
+    // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
     // change the ciphertext without reason
     getPlaintextDOMElement().addEventListener('focus', ev => {
-        if (hasErrors()) {
-            clearErrorMessages();
-            willRequestEncryption(getPlaintext())
-            .then(setCiphertext);
-        }
+        if (hasErrors()) { clearErrorsAndEncrypt(); }
     });
 
     getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
 
     // redo encryption if any of the fields used to encrypt has changed
     getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
-        let eventType = 'input';
-
-        if (elem.type === 'checkbox') {
-            eventType = 'change';
-        }
-
-        elem.addEventListener(eventType, ev => {
-            clearErrorMessages();
-            willRequestEncryption(getPlaintext())
-            .then(setCiphertext);
-        });
+        elem.addEventListener('input', ev => clearErrorsAndEncrypt());
     });
 
-    function updatePlaintextFromCiphertext() {
+    async function updatePlaintextFromCiphertext() {
         clearErrorMessages();
-        willRequestDecryption()
-        .then(function (result) {
+        try {
+            let result = await willRequestDecryption();
             setPlaintext(result.plaintext);
-        }).catch(e => {
-            console.error('cannot decode ciphertext', e);
-        });
+        } catch (e) {
+            console.error(e);
+            displayError(new Error('Cannot decrypt, most likely the ciphertext is not correct: focus the cleartext to refresh the ciphertext'));
+        };
     }
 
     // redo decryption if the ciphertext has changed (or may have changed)
@@ -671,6 +671,7 @@ button.action {
             updatePlaintextFromCiphertext();
         } catch (e) {
             console.error(e);
+            displayError(new Error('Error retrieving the ciphertext'));
         }
     });
 
@@ -765,7 +766,8 @@ button.action {
             }
             console.log('Cool, the file was uploaded correctly!');
         } catch (e) {
-            console.error('An error arised', e);
+            console.error('Error uploading the ciphertext', e);
+            displayError(new Error('Error uploading the ciphertext'));
         }
     });
 
@@ -870,7 +872,7 @@ button.action {
         });
     });
 
-    getLoginButtonDOMElement().addEventListener('click', () => {
+    getLoginButtonDOMElement().addEventListener('click', async function() {
         if (getConfirmSecret() !== getSecret()) {
             window.alert('The passwords don\'t match');
         } else {
