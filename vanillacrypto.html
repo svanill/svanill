@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
 // Salt, it ensures that two people with the same password will generate
 // different secret keys. It should be at least 8 random characters long.
@@ -30,12 +31,13 @@ html {
 body {
     box-sizing: border-box;
     max-width: 1200px;
+    width: 100%;
     padding: 1em;
     margin: 0 auto;
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
-    height: 100%;
+    flex-direction: column;
+    min-height: 100%;
 }
 
 p {
@@ -44,8 +46,8 @@ p {
 
 .main-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100%;
+    flex: 1 0 auto;
     flex-wrap: wrap;
 }
 
@@ -84,7 +86,9 @@ input[type=text], input[type=password] {
     padding: 0 1em;
     display: flex;
     flex: 1 1 50%;
-    flex-wrap: wrap;
+    flex-direction: column;
+    min-width: 360px;
+    margin-top: 1em;
 }
 
 .plaintext-container > textarea,
@@ -98,10 +102,6 @@ input[type=text], input[type=password] {
 
 #ciphertext {
     font-family: Andale Mono, AndaleMono, Consolas, Monaco, monospace;
-}
-
-.error {
-    color: red;
 }
 
 span.error:empty:before {
@@ -242,25 +242,33 @@ textarea:focus::placeholder {
     display: flex;
 }
 
-#logout-btn {
-    position: absolute;
-    top: 0.5em;
-    right: 0.5em;
+.require-login #logout-btn {
+    display: none;
 }
 
 .enable-external-actions .external-actions {
     display: flex;
+    flex-direction: column;
 }
 
 .external-actions {
     display: none;
+    position: absolute;
+    top: 4em;
+    right: 0.5em;
+}
+
+.actions {
+    text-align: right;
 }
 
 .action-bar {
     width: 100%;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
+    flex-wrap: wrap;
+    margin-bottom: 0.5em;
 }
 
 button.action {
@@ -272,10 +280,15 @@ button.action {
     color: #af9f88;
     text-shadow: 0 0 33px black;
     font-size: 1.3em;
+    margin-right: 0.2em;
 }
 
 #error-bar {
     line-height: 1.5em;
+    color: red;
+    flex: 0 1 auto;
+    text-align: center;
+    margin-top: 0.2em;
 }
 
 #error-bar:empty::after {
@@ -320,9 +333,9 @@ button.action {
     <button id="login-btn" type="submit" disabled="disabled" autocomplete="off">Unlock</button>
 </div>
 
-<div class="main-container">
-
 <button id="logout-btn">Logout</button>
+
+<div class="main-container">
 
 <div class="plaintext-container">
     <p class="action-bar"><label class="title">Cleartext</label> <button id="download-cleartext" class="action">⬇ download</button></p>
@@ -344,9 +357,9 @@ button.action {
 <!-- invisible anchor used to trigger the download dialog -->
 <a id ="download-dialog-anchor" href="" style="display:none"></a>
 
-<p id="error-bar" class="error"></p>
-
 </div>
+
+<p id="error-bar"></p>
 
 <script>
 
