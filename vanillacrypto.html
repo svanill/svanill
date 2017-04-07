@@ -383,7 +383,7 @@ button.action {
     function willGenerateKeyPBKDF2(secret) {
         if (!secret) {
             // Firefox doesn't allow it, Chrome does. Let's make it consistent.
-            throw new Error('Cannot generate a key with an empty secret');
+            throw new Error('Cannot generate a key using an empty secret');
         }
 
         return crypto.subtle.importKey(
@@ -410,56 +410,23 @@ button.action {
         );
     }
 
-    function willEncryptAESGCM(key, params) {
-        const { iv, additionalData, plaintext } = params;
-        const adAsBytes = stringToUint8Array(JSON.stringify(additionalData));
-
-        return crypto.subtle.encrypt(
-            {
-                name: 'AES-GCM',
-                iv,
-                additionalData: adAsBytes,
-            },
-            key,
-            stringToUint8Array(plaintext)
-        ).then(enc => {
-            return [
-                u_btoa(adAsBytes),
-                u_btoa(iv),
-                u_btoa(enc), // ciphertext | tag
-            ].join('.');
-        });
-    }
-
-    function willDecryptAESGCM(b_key, b_iv, b_ad, b_enc) {
-        return crypto.subtle.decrypt(
-            {
-                name: 'AES-GCM',
-                iv: b_iv,
-                additionalData: b_ad,
-            },
-            b_key,
-            b_enc
-        ).then(dec => ({
-            plaintext: bufToString(dec),
-            additionalData: JSON.parse(bufToString(b_ad)),
-            iv: b_iv,
-        }));
-    }
-
     /**
-     * Encrypt plaintext using 256 AES in CBC mode, deriving the key with PBKDF2.
+     * Encrypt text using 256 AES in GCM mode, deriving the key with PBKDF2.
      *
      * @param string plaintext the text to encrypt
      * @param string secret the secret to use to derive the key with PBKDF2
      * @param array optionsPBKDF2
      *              - string salt use it to prevent dictionary attacks
      *              - number iterations the number of PBKDF2 iterations to derive the key
-     * @param arrayBuffer iv a nonce to use in AES-GCM
-     * @return Promise that will resolve to an array with keys iv, ciphertext, whose values are hexstrings
+     * @param arrayBuffer b_iv a nonce to use in AES-GCM
+     * @return Promise that will resolve to our encrypted box format.
      *
-     * >>> // example
-     * >>>
+     * The encrypted box is formed by 3 base64 encoded parts (additional data,
+     * iv, ciphertext <concat> tag), separated by a dot.
+     *
+     * The additional data is a JSON object with the salt and iterations used
+     * to derive the key with PBKDF2.
+     *
      * >>> willEncryptPlaintext(
      * >>>     'the text to encrypt',
      * >>>     'your strong secret',
@@ -469,81 +436,78 @@ button.action {
      * >>>     },
      * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
      * >>> ).then(function (result) {
-     * >>>     console.log(result); // e.g. "<additional data as hex>.<iv as hex>.<ciphertext as hex>"
+     * >>>     console.log(result); // abc.def.ghi
      * >>> });
      */
-    function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv) {
-        return willGenerateKeyPBKDF2(secret)
-        .then(function (baseKey) {
-            return willDeriveKey(baseKey, optionsPBKDF2);
-        })
-        .then(function (derivedKey) {
-            return willEncryptAESGCM(derivedKey, {
-                iv,
-                plaintext,
-                additionalData: optionsPBKDF2
-            });
-        });
+    async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
+        let baseKey = await willGenerateKeyPBKDF2(secret)
+        let derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
+        let b_ad = stringToUint8Array(JSON.stringify(optionsPBKDF2));
+        let b_enc = await crypto.subtle.encrypt(
+            {
+                name: 'AES-GCM',
+                iv: b_iv,
+                additionalData: b_ad,
+            },
+            derivedKey,
+            stringToUint8Array(plaintext)
+        );
+
+        return [
+            u_btoa(b_ad),
+            u_btoa(b_iv),
+            u_btoa(b_enc), // ciphertext | tag
+        ].join('.');
     }
 
     /**
-     * Decrypt ciphertext using 256 AES in CBC mode, deriving the key with PBKDF2.
+     * Decrypt data using 256 AES in GCM mode, deriving the key with PBKDF2.
      *
-     * @param string ciphertext the text to encrypt
+     * @param string ciphertext the text to decrypt, as produced by willEncryptPlaintext
      * @param string secret the secret to use to derive the key with PBKDF2
-     * @param array optionsPBKDF2
-     *              - string salt the string used alongside the secret to derive the key
-     *              - number iterations the number of PBKDF2 iterations used to derive the key
-     * @return Promise that will resolve to an object with key plaintext, whose value is the plaintext as string
+     *
+     * @return Promise that will resolve to an object with format {plaintext,
+     * additionalData, iv}
+     *
      */
-    function willDecryptCiphertext(encryptedBox, secret) {
-        try {
-            let [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
-            let [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
+    async function willDecryptCiphertext(encryptedBox, secret) {
+        let [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
+        let [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
+        let additionalData = JSON.parse(bufToString(b_ad));
 
-            let ad = JSON.parse(bufToString(b_ad));
+        let optionsPBKDF2 = {
+            salt: additionalData.salt || '',
+            iterations: additionalData.iterations || '',
+        };
 
-            let optionsPBKDF2 = {
-                salt: ad.salt || '',
-                iterations: ad.iterations || '',
-            };
+        let baseKey = await willGenerateKeyPBKDF2(secret)
+        let derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
+        let b_dec = await crypto.subtle.decrypt(
+            {
+                name: 'AES-GCM',
+                iv: b_iv,
+                additionalData: b_ad,
+            },
+            derivedKey,
+            b_enc
+        );
 
-            return willGenerateKeyPBKDF2(secret)
-            .then(function (baseKey) {
-                return willDeriveKey(baseKey, optionsPBKDF2);
-            })
-            .then(function (derivedKey) {
-                return willDecryptAESGCM(derivedKey, b_iv, b_ad, b_enc);
-            });
-
-        } catch (e) {
-            return Promise.reject(e);
-        }
-
+        return {
+            plaintext: bufToString(b_dec),
+            additionalData,
+            iv: b_iv,
+        };
     }
 
     function willRequestEncryption(plaintext) {
         let secret = getSecret();
-        let iv = window.crypto.getRandomValues(new Uint8Array(16));
+        let b_iv = window.crypto.getRandomValues(new Uint8Array(16));
         let optionsPBKDF2 = {
             salt: getPBKDF2Salt(),
             iterations: getPBKDF2Iterations(),
         };
 
-        return willEncryptPlaintext(plaintext, secret, optionsPBKDF2, iv);
-    }
-
-    function willRequestDecryption() {
-        let ciphertext = getCiphertext();
-
-        if (!ciphertext) {
-            return Promise.resolve({
-                plaintext: '',
-            });
-        }
-
-        let secret = getSecret();
-        return willDecryptCiphertext(ciphertext, secret);
+        return willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
     }
 
     function triggerDownloadDialog(blob, filename) {
@@ -638,8 +602,16 @@ button.action {
     async function updatePlaintextFromCiphertext() {
         clearErrorMessages();
         try {
-            let result = await willRequestDecryption();
-            setPlaintext(result.plaintext);
+            const secret = getSecret();
+            const ciphertext = getCiphertext();
+            let plaintext = '';
+
+            if (ciphertext) {
+                const result = await willDecryptCiphertext(ciphertext, secret);
+                plaintext = result.plaintext;
+            }
+
+            setPlaintext(plaintext);
         } catch (e) {
             console.error(e);
             displayError(new Error('Cannot decrypt, most likely the ciphertext is not correct: focus the cleartext to refresh the ciphertext'));
