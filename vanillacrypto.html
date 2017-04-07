@@ -623,16 +623,14 @@ button.action {
         getCiphertextDOMElement().addEventListener(eventType, ev => updatePlaintextFromCiphertext())
     });
 
-    getDownloadCiphertextButtonDOMElement().addEventListener('click', ev => {
+    getDownloadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
         ev.preventDefault();
 
-        willRequestEncryption(getPlaintext())
-        .then(encryptedBox => {
-            const blob = new Blob([encryptedBox], {type: "plain/text"});
-            const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
+        let encryptedBox = await willRequestEncryption(getPlaintext());
+        const blob = new Blob([encryptedBox], {type: "plain/text"});
+        const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
 
-            triggerDownloadDialog(blob, filename);
-        });
+        triggerDownloadDialog(blob, filename);
     });
 
     getDownloadCleartextButtonDOMElement().addEventListener('click', ev => {
@@ -755,15 +753,15 @@ button.action {
     async function willRequestUploadUrl(filename) {
         let href = STORE_URL + '/file/request-upload-url';
         let token = await willGetAuthToken();
-
-        return fetchJSONWithRetryOnAuthExpired(href, {
+        let jsonResponse = await fetchJSONWithRetryOnAuthExpired(href, {
             method: 'POST',
             body: JSON.stringify({
                 jwt: token,
                 filename: filename,
             }),
         })
-        .then(jsonResponse => jsonResponse.links.upload_url.href);
+
+        return jsonResponse.links.upload_url.href;
     }
 
     async function willUploadCiphertext(uploadUrl, ciphertext) {
@@ -783,19 +781,18 @@ button.action {
         });
     }
 
-    function willDownload(href) {
-        return fetch(href, {
+    async function willDownload(href) {
+        let response = await fetch(href, {
             mode: 'cors',
             cache: 'no-store',
             referrerPolicy: 'no-referrer',
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.text();
-            } else {
-                return Promise.reject(response.statusText);
-            }
         });
+
+        if (response.ok) {
+            return response.text();
+        } else {
+            throw new Error(response.statusText);
+        }
     }
 
     async function willGetFilesList() {
