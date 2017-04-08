@@ -828,7 +828,12 @@ button.action {
 
         options.headers['Content-Type'] = 'application/json';
 
-        let response = await fetch(href, options);
+        let request = fetch(href, options);
+        let timeout = new Promise((resolve, reject) => {
+            setTimeout(() => reject(new Error('request timed out')), 15000);
+        });
+
+        let response = await Promise.race([timeout, request]);
 
         if (response.headers.get('Content-Type') === 'application/json') {
             return response.json();
