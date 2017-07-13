@@ -862,7 +862,7 @@ button.action {
             try {
                 if (getUsername()) {
                     // auth, possibly ask to create the user
-                    let token = await _willGetAuthToken();
+                    let token = await willGetAuthToken();
                 } else {
                     document.body.classList.remove('enable-external-actions');
                 }
