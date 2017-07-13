@@ -16,6 +16,7 @@ const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('ite
 // Url fo the service (an instance of Piggy Store) where you could optionally
 // store your encrypted data
 const STORE_URL = 'http://localhost:5000';
+const TRUSTED_UPLOAD_BASE_URL = 'http://localhost:9000/'
 // How you want to name the file on the storage server that will hold your data.
 const FILENAME = 'main';
 </script>
@@ -737,8 +738,12 @@ button.action {
         try {
             let ciphertext = await willRequestEncryption(getPlaintext()); // XXX this way we upload something different from what the user sees !!!!
             let uploadUrl = await willRequestUploadUrl(filename);
-            let objectUrl = uploadUrl.replace(/\?.*$/, ''); // XXX this is not safe probably
+            if (uploadUrl.slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
+                throw new Error('The server proposed to upload the file to an untrusted url!');
+            }
             await willUploadCiphertext(uploadUrl, ciphertext);
+
+            let objectUrl = uploadUrl.replace(/\?.*$/, '');
             let uploadedContent = await willDownload(objectUrl);
             if (uploadedContent !== ciphertext) {
                 throw new Error('The uploaded file does not match the original file');
