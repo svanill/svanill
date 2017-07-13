@@ -855,7 +855,7 @@ button.action {
         });
     });
 
-    getLoginButtonDOMElement().addEventListener('click', async function() {
+    async function attemptLogin() {
         if (getConfirmSecret() !== getSecret()) {
             window.alert('The passwords don\'t match');
         } else {
@@ -871,7 +871,10 @@ button.action {
                 displayError(e);
             }
         }
-    });
+    }
+
+    getLoginButtonDOMElement().addEventListener('click', ev => attemptLogin());
+    window.addEventListener('keyup', ev => event.key === 'Enter' && attemptLogin());
 
     getLogoutButtonDOMElement().addEventListener('click', () => {
         document.location.reload();
