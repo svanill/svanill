@@ -571,7 +571,7 @@ button.action {
     };
 
     let displayError = (e) => {
-        getErrorBarDOMElement().innerText = e.message;
+        getErrorBarDOMElement().innerText = e.message || e.name || 'Unknown error';
     };
 
     let hasErrors = () => getErrorBarDOMElement().innerText.trim() !== '';
