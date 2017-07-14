@@ -292,6 +292,38 @@ button.action {
     content: "\00a0"; /* non breaking space to force height even if empty */
 }
 
+#overlay {
+    display: flex;
+    height: 100%;
+    background-color: rgba(159, 159, 187, 0.56);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes spinner-animation {
+  to {transform: rotate(360deg);}
+}
+
+#spinner {
+  box-sizing: border-box;
+  width: 4em;
+  height: 4em;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  border-top-color: #333;
+  animation: spinner-animation .6s linear infinite;
+}
+
+#overlay.is-hidden {
+    display: none;
+}
+
+
 </style>
 </head>
 <body spellcheck="false" class="require-login enable-external-actions">
@@ -357,6 +389,7 @@ button.action {
 </div>
 
 <p id="error-bar"></p>
+<div id="overlay" class="is-hidden"><div id="spinner"></div></div>
 
 <script>
 
@@ -565,6 +598,8 @@ button.action {
     let getConfirmSecretDOMElement = () => document.getElementById('confirm-secret');
     let getConfirmSecret = () => getConfirmSecretDOMElement().value;
 
+    let getOVerlayDOMElement = () => document.getElementById('overlay');
+
     let getErrorBarDOMElement = () => document.getElementById('error-bar');
 
     let clearErrorMessages = () => {
@@ -574,6 +609,10 @@ button.action {
     let displayError = (e) => {
         getErrorBarDOMElement().innerText = e.message || e.name || 'Unknown error';
     };
+
+    let toggleOverlay = (isVisible) => {
+        getOVerlayDOMElement().classList.toggle('is-hidden', Boolean(!isVisible));
+    }
 
     let hasErrors = () => getErrorBarDOMElement().innerText.trim() !== '';
 
@@ -645,6 +684,9 @@ button.action {
 
     getReloadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
         ev.preventDefault();
+
+        toggleOverlay(true);
+
         try {
             let ciphertext = await willGetFirstFileContent();
             setCiphertext(ciphertext);
@@ -653,6 +695,8 @@ button.action {
             console.error(e);
             displayError(new Error('Error retrieving the ciphertext'));
         }
+
+        toggleOverlay(false);
     });
 
     async function _willGetAuthToken() {
@@ -735,6 +779,8 @@ button.action {
 
         let filename = getFilename();
 
+        toggleOverlay(true);
+
         try {
             let ciphertext = await willRequestEncryption(getPlaintext()); // XXX this way we upload something different from what the user sees !!!!
             let uploadUrl = await willRequestUploadUrl(filename);
@@ -753,6 +799,8 @@ button.action {
             console.error('Error uploading the ciphertext', e);
             displayError(new Error('Error uploading the ciphertext'));
         }
+
+        toggleOverlay(false);
     });
 
     async function willRequestUploadUrl(filename) {
@@ -864,6 +912,7 @@ button.action {
         if (getConfirmSecret() !== getSecret()) {
             window.alert('The passwords don\'t match');
         } else {
+            toggleOverlay(true);
             try {
                 if (getUsername()) {
                     // auth, possibly ask to create the user
@@ -875,6 +924,7 @@ button.action {
             } catch (e) {
                 displayError(e);
             }
+            toggleOverlay(false);
         }
     }
 
