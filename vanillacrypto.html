@@ -17,8 +17,6 @@ const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('ite
 // store your encrypted data
 const STORE_URL = 'http://localhost:5000';
 const TRUSTED_UPLOAD_BASE_URL = 'http://localhost:9000/'
-// How you want to name the file on the storage server that will hold your data.
-const FILENAME = 'main';
 </script>
 <style>
 
@@ -414,6 +412,16 @@ button.action {
         return btoa(binary.join(''));
     }
 
+    function bufToHex(buffer) {
+        return buffer.reduce((a, b) => a + ('0' + b.toString(16)).slice(-2), '');
+    }
+
+    function getRandomHexString(length) {
+        let array = new Uint8Array(Math.ceil(length/2));
+        window.crypto.getRandomValues(array);
+        return bufToHex(array).slice(0, length);
+    }
+
     function willGenerateKeyPBKDF2(secret) {
         if (!secret) {
             // Firefox doesn't allow it, Chrome does. Let's make it consistent.
@@ -578,7 +586,6 @@ button.action {
 
     let getPBKDF2Salt = () => PBKDF2_SALT;
     let getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
-    let getFilename = () => FILENAME;
 
     let getDownloadCleartextButtonDOMElement = () => document.getElementById('download-cleartext');
     let getDownloadCiphertextButtonDOMElement = () => document.getElementById('download-ciphertext');
@@ -778,10 +785,21 @@ button.action {
         });
     }
 
+    const getFilenameOrDefault = (() => {
+        let _filename = null;
+        return ((defaultFilename) => {
+            if (!_filename) {
+                _filename = defaultFilename || getRandomHexString(32);
+            }
+            return _filename;
+        });
+    })();
+
     getUploadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
         ev.preventDefault();
 
-        let filename = getFilename();
+        // XXX this is ok as long as we support just a single file
+        let filename = getFilenameOrDefault();
 
         toggleOverlay(true);
 
