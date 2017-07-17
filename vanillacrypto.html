@@ -688,7 +688,11 @@ button.action {
         toggleOverlay(true);
 
         try {
-            let ciphertext = await willGetFirstFileContent();
+            const files = await willGetFilesList();
+            let ciphertext = '';
+            if (files.length > 0) {
+                ciphertext = await willDownload(files[0].links.read.href);
+            }
             setCiphertext(ciphertext);
             updatePlaintextFromCiphertext();
         } catch (e) {
@@ -854,11 +858,6 @@ button.action {
 
         let jsonResponse = await fetchJSONWithRetryOnAuthExpired(url.href);
         return jsonResponse.content;
-    }
-
-    async function willGetFirstFileContent() {
-        let files = await willGetFilesList();
-        return files.length > 0 ? await willDownload(files[0].links.read.href) : '';
     }
 
     async function fetchJSONWithRetryOnAuthExpired(href, options) {
