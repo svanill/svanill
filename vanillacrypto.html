@@ -821,6 +821,7 @@ button.action {
             const files = await willGetFilesList();
             let ciphertext = '';
             if (files.length > 0) {
+                getFilenameOrDefault(files[0].content.filename);
                 ciphertext = await willDownload(files[0].links.read.href);
             }
             setCiphertext(ciphertext);
