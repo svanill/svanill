@@ -689,25 +689,16 @@ button.action {
         triggerDownloadDialog(blob, filename);
     });
 
-    getReloadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
+    getReloadCiphertextButtonDOMElement().addEventListener('click', ev => {
         ev.preventDefault();
-
         toggleOverlay(true);
-
         try {
-            const files = await willGetFilesList();
-            let ciphertext = '';
-            if (files.length > 0) {
-                ciphertext = await willDownload(files[0].links.read.href);
-            }
-            setCiphertext(ciphertext);
-            updatePlaintextFromCiphertext();
+            reloadFile();
+            toggleOverlay(false);
         } catch (e) {
-            console.error(e);
-            displayError(new Error('Error retrieving the ciphertext'));
+            toggleOverlay(false);
+            throw e;
         }
-
-        toggleOverlay(false);
     });
 
     async function _willGetAuthToken() {
@@ -825,6 +816,21 @@ button.action {
         toggleOverlay(false);
     });
 
+    async function reloadFile() {
+        try {
+            const files = await willGetFilesList();
+            let ciphertext = '';
+            if (files.length > 0) {
+                ciphertext = await willDownload(files[0].links.read.href);
+            }
+            setCiphertext(ciphertext);
+            updatePlaintextFromCiphertext();
+        } catch (e) {
+            console.error(e);
+            throw new Error('Error retrieving the ciphertext');
+        }
+    }
+
     async function willRequestUploadUrl(filename) {
         let href = STORE_URL + '/file/request-upload-url';
         let token = await willGetAuthToken();
@@ -934,6 +940,7 @@ button.action {
                 if (getUsername()) {
                     // auth, possibly ask to create the user
                     let token = await willGetAuthToken();
+                    reloadFile();
                 } else {
                     document.body.classList.remove('enable-external-actions');
                 }
