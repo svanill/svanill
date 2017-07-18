@@ -761,10 +761,7 @@ button.action {
     }
 
     async function willCreateNewUser() {
-        // create a 32 char length random hex string
-        let b_answer = window.crypto.getRandomValues(new Uint8Array(16));
-        let h_answer = Array.prototype.map.call(b_answer, x => ('00' + x.toString(16)).slice(-2)).join('');
-
+        let h_answer = getRandomHexString(32);
         let url = new URL(STORE_URL + '/user/');
         return fetchJSON(url.href, {
             method: 'POST',
