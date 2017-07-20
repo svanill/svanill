@@ -104,6 +104,10 @@ input[type=text], input[type=password] {
     font-family: Andale Mono, AndaleMono, Consolas, Monaco, monospace;
 }
 
+#ciphertext-error-bar {
+    color: red;
+}
+
 span.error:empty:before {
     content: "\200b"; /* unicode zero width space character */
 }
@@ -411,6 +415,7 @@ button.action {
     <button id="download-ciphertext" class="action"> ⬇ download</button>
     </span>
     </p>
+    <p id="ciphertext-error-bar"></p>
     <textarea id="ciphertext" autocomplete="off" placeholder="Click here to paste some text to decrypt"></textarea>
 </div>
 
@@ -641,10 +646,7 @@ button.action {
     let getOVerlayDOMElement = () => document.getElementById('overlay');
 
     let getErrorBarDOMElement = () => document.getElementById('error-bar');
-
-    let clearErrorMessages = () => {
-        getErrorBarDOMElement().innerText = '';
-    };
+    let getCiphertextErrorBarDOMElement = () => document.getElementById('ciphertext-error-bar');
 
     const pushErrorToDisplayQueue = (e) => {
         const errorMessage = e.message || e.name || 'Unknown error';
@@ -674,13 +676,18 @@ button.action {
         getOVerlayDOMElement().classList.toggle('is-hidden', Boolean(!isVisible));
     }
 
-    let hasErrors = () => getErrorBarDOMElement().innerText.trim() !== '';
+    let ciphertextHasError = () => getCiphertextDOMElement().classList.contains('has-error');
+    let setCiphertextError = (errorMessage) => {
+        const hasError = Boolean(errorMessage.trim());
+        getCiphertextDOMElement().classList.toggle('has-error', hasError);
+        getCiphertextErrorBarDOMElement().innerText = errorMessage;
+    }
 
-    let clearErrorsAndEncrypt = async function() {
-        clearErrorMessages();
+    let encryptPlaintextAndSetCiphertext = async function() {
         try {
             let ciphertext = await willRequestEncryption(getPlaintext());
             setCiphertext(ciphertext);
+            setCiphertextError('');
         } catch (e) {
             pushErrorToDisplayQueue(e);
         }
@@ -689,18 +696,18 @@ button.action {
     // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
     // change the ciphertext without reason
     getPlaintextDOMElement().addEventListener('focus', ev => {
-        if (hasErrors()) { clearErrorsAndEncrypt(); }
+        if (ciphertextHasError()) { encryptPlaintextAndSetCiphertext(); }
     });
 
     getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
 
     // redo encryption if any of the fields used to encrypt has changed
     getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
-        elem.addEventListener('input', ev => clearErrorsAndEncrypt());
+        elem.addEventListener('input', ev => encryptPlaintextAndSetCiphertext());
     });
 
     async function updatePlaintextFromCiphertext() {
-        clearErrorMessages();
+        setCiphertextError('');
         try {
             const secret = getSecret();
             const ciphertext = getCiphertext();
@@ -714,7 +721,7 @@ button.action {
             setPlaintext(plaintext);
         } catch (e) {
             console.error(e);
-            pushErrorToDisplayQueue(new Error('Cannot decrypt, most likely the ciphertext is not correct: focus the cleartext to refresh the ciphertext'));
+            setCiphertextError('Cannot decrypt, most likely the ciphertext is not correct: focus the cleartext to refresh the ciphertext');
         };
     }
 
