@@ -750,44 +750,34 @@ button.action {
         triggerDownloadDialog(blob, filename);
     });
 
-    getReloadCiphertextButtonDOMElement().addEventListener('click', ev => {
+    getReloadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
         ev.preventDefault();
         toggleOverlay(true);
         try {
-            reloadFile();
+            await reloadFile();
             toggleOverlay(false);
         } catch (e) {
+            pushErrorToDisplayQueue(e);
             toggleOverlay(false);
-            throw e;
         }
     });
 
     async function _willGetAuthToken() {
-        let token = null;
-        let url = new URL(STORE_URL + '/user/auth/request-challenge');
-        url.searchParams.append('username', getUsername());
-
-        let parsedResponse = await fetchJSON(url.href);
-
-        let finalResponse = null;
-
-        if (parsedResponse.status === 401) {
-            // user does not exist
-            if (!window.confirm('No user found with that username, would you like to create it?')) {
-                throw new Error('User refused to create an account');
-            }
-
-            finalResponse = await willCreateNewUser();
-        } else if (parsedResponse.status === 200) {
+        try {
             // user exists, we've got a challenge to decrypt
-            let challenge = parsedResponse.content.challenge
-            finalResponse = await willAnswerChallenge(challenge);
+            let challenge = (await willRequestChallenge()).content.challenge
+            return (await willAnswerChallenge(challenge)).content.token;
+        } catch (e) {
+            if (e instanceof UserDoesNotExistError) {
+                if (!window.confirm('No user found with that username, would you like to create it?')) {
+                    throw new Error('User refused to create an account');
+                }
 
-        } else {
-            throw new Error(JSON.stringify(parsedResponse));
+                return (await willCreateNewUser()).content.token;
+            } else {
+                throw e;
+            }
         }
-
-        return finalResponse.content.token;
     }
 
     /**
@@ -807,24 +797,48 @@ button.action {
         }
     })();
 
+    async function willRequestChallenge() {
+        let url = new URL(STORE_URL + '/user/auth/request-challenge');
+        url.searchParams.append('username', getUsername());
+
+        let parsedResponse = await fetchJSON(url.href);
+
+        if (parsedResponse.error) {
+            if (parsedResponse.error.code === 1005) {
+                throw new UserDoesNotExistError();
+            }
+            throw new CannotRequestChallengeError(parsedResponse.error);
+        }
+
+        return parsedResponse;
+    }
+
+    class UserDoesNotExistError extends Error {}
+
     async function willAnswerChallenge(challenge) {
         let answerBox = await willDecryptCiphertext(challenge, getSecret());
         let answer = answerBox.plaintext;
 
         let url = new URL(STORE_URL + '/user/auth/answer-challenge');
-        return fetchJSONWithRetryOnAuthExpired(url.href, {
+        let parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
             method: 'POST',
             body: JSON.stringify({
                 username: getUsername(),
                 answer,
             }),
         });
+
+        if (parsedResponse.error) {
+            throw new CannotAnswerChallengeError(parsedResponse.error);
+        }
+
+        return parsedResponse;
     }
 
     async function willCreateNewUser() {
         let h_answer = getRandomHexString(32);
         let url = new URL(STORE_URL + '/user/');
-        return fetchJSON(url.href, {
+        let parsedResponse = await fetchJSON(url.href, {
             method: 'POST',
             body: JSON.stringify({
                 username: getUsername(),
@@ -832,6 +846,36 @@ button.action {
                 answer: h_answer,
             }),
         });
+
+        if (parsedResponse.error) {
+            throw new CannotCreateNewUserError(parsedResponse.error);
+        }
+
+        return parsedResponse;
+    }
+
+    class CannotCreateNewUserError extends Error {
+        constructor(jsonError) {
+            super();
+            this.message = 'Couldn\'t create the user. Server response was: ' +
+            '[' + jsonError.code + '] ' + jsonError.message;
+        }
+    }
+
+    class CannotRequestChallengeError extends Error {
+        constructor(jsonError) {
+            super();
+            this.message = 'Couldn\'t start authentication. Server response was: ' +
+            '[' + jsonError.code + '] ' + jsonError.message;
+        }
+    }
+
+    class CannotAnswerChallengeError extends Error {
+        constructor(jsonError) {
+            super();
+            this.message = 'Couldn\'t authenticate. Server response was: ' +
+            '[' + jsonError.code + '] ' + jsonError.message;
+        }
     }
 
     const getFilenameOrDefault = (() => {
@@ -867,8 +911,13 @@ button.action {
             }
             console.log('Cool, the file was uploaded correctly!');
         } catch (e) {
-            console.error('Error uploading the ciphertext', e);
-            pushErrorToDisplayQueue(new Error('Error uploading the ciphertext'));
+            if (e instanceof UploadCiphertextError
+                || e instanceof CannotRequestUploadUrlError) {
+                pushErrorToDisplayQueue(e);
+            } else {
+                console.error('Error uploading the ciphertext', e);
+                pushErrorToDisplayQueue(new Error('Error uploading the ciphertext'));
+            }
         }
 
         toggleOverlay(false);
@@ -885,15 +934,21 @@ button.action {
             setCiphertext(ciphertext);
             updatePlaintextFromCiphertext();
         } catch (e) {
-            console.error(e);
-            throw new Error('Error retrieving the ciphertext');
+            if (e instanceof CannotRetrieveFilesListError) {
+                throw e;
+            } else if (e instanceof DownloadError) {
+                throw e;
+            } else {
+                console.error(e);
+                throw new Error('An error occurred while reloading the ciphertext');
+            }
         }
     }
 
     async function willRequestUploadUrl(filename) {
         let href = STORE_URL + '/file/request-upload-url';
         let token = await willGetAuthToken();
-        let jsonResponse = await fetchJSONWithRetryOnAuthExpired(href, {
+        let parsedResponse = await fetchJSONWithRetryOnAuthExpired(href, {
             method: 'POST',
             body: JSON.stringify({
                 jwt: token,
@@ -901,28 +956,57 @@ button.action {
             }),
         })
 
-        return jsonResponse.links.upload_url.href;
+        if (parsedResponse.error) {
+            throw new CannotRequestUploadUrlError(parsedResponse.error);
+        }
+
+        return parsedResponse.links.upload_url.href;
+    }
+
+    class CannotRequestUploadUrlError extends Error {
+        constructor(jsonError) {
+            super();
+            this.message = 'Cannot get the url to upload to. Server response was: ' +
+            '[' + jsonError.code + '] ' + jsonError.message;
+        }
     }
 
     async function willUploadCiphertext(uploadUrl, ciphertext) {
-        let href = uploadUrl;
-        return fetch(href, {
-            headers: {
-                'Cache-Control': 'None',
-                'Expect': '100-continue',
-                'Content-Encoding': 'utf-8',
-                'Content-Type': 'text/plain',
-                // XXX ... no md5 in crypto subtle, so we can't rely on it.
-                // We'll have to download the file and verify his content later
-                // 'Content-MD5': 'application/json',
-            },
-            method: 'PUT',
-            body: ciphertext,
-        });
+        try {
+            let href = uploadUrl;
+            let response = await fetchOrThrow(href, {
+                headers: {
+                    'Cache-Control': 'None',
+                    'Expect': '100-continue',
+                    'Content-Encoding': 'utf-8',
+                    'Content-Type': 'text/plain',
+                    // XXX ... no md5 in crypto subtle, so we can't rely on it.
+                    // We'll have to download the file and verify his content later
+                    // 'Content-MD5': 'application/json',
+                },
+                method: 'PUT',
+                body: ciphertext,
+            });
+
+            if (!response.ok) {
+                throw new UploadCiphertextError('Couldn\'t upload the ciphertext, response status was: ' + statusText);
+            }
+
+            return response;
+        } catch (e) {
+            if (e instanceof FetchUnexpectedError
+                || e instanceof FetchRequestTimedOutError) {
+                throw new UploadCiphertextError(e.message);
+            } else {
+                throw e;
+            }
+        }
     }
 
+    class UploadCiphertextError extends Error {};
+
     async function willDownload(href) {
-        let response = await fetch(href, {
+        let response = await fetchOrThrow(href, {
             mode: 'cors',
             cache: 'no-store',
             referrerPolicy: 'no-referrer',
@@ -931,7 +1015,14 @@ button.action {
         if (response.ok) {
             return response.text();
         } else {
-            throw new Error(response.statusText);
+            throw new DownloadError(response.statusText);
+        }
+    }
+
+    class DownloadError extends Error {
+        constructor(statusText) {
+            super();
+            this.message = 'Couldn\'t download the file. Server response was: ' + statusText;
         }
     }
 
@@ -940,6 +1031,7 @@ button.action {
         url.searchParams.append('jwt', await willGetAuthToken());
 
         let jsonResponse = await fetchJSONWithRetryOnAuthExpired(url.href);
+        if (jsonResponse.error) { throw new CannotRetrieveFilesListError(jsonResponse.error); }
         return jsonResponse.content;
     }
 
@@ -953,6 +1045,44 @@ button.action {
         return response;
     }
 
+    class FetchUnexpectedError extends Error {
+        constructor(orig) {
+            super();
+            this.message = "Cannot fetch an external resource: check your internet connection or configuration";
+            this.details = orig;
+        }
+    }
+    class FetchRequestTimedOutError extends Error {
+        constructor() {
+            super();
+            this.message = "The request is taking too long to complete";
+        }
+    }
+    class FetchUnexpectedFormat extends Error {
+        constructor(statusText) {
+            super();
+            this.message = statusText;
+        }
+    }
+
+    class CannotRetrieveFilesListError extends Error {
+        constructor(jsonError) {
+            super();
+            this.message = 'Cannot retrieve the files\' list. Server response was: ' +
+            '[' + jsonError.code + '] ' + jsonError.message;
+        }
+    }
+
+    async function fetchOrThrow(href, options) {
+        let request = fetch(href, options)
+        .catch (e => { throw new FetchUnexpectedError(e); });
+        let timeout = new Promise((resolve, reject) => {
+            // XXX we should abort the request on timeout
+            setTimeout(() => reject(new FetchRequestTimedOutError()), 15000);
+        });
+        return Promise.race([timeout, request]);
+    }
+
     async function fetchJSON(href, options) {
         options = Object.assign({}, {
             headers: {},
@@ -963,17 +1093,12 @@ button.action {
 
         options.headers['Content-Type'] = 'application/json';
 
-        let request = fetch(href, options);
-        let timeout = new Promise((resolve, reject) => {
-            setTimeout(() => reject(new Error('request timed out')), 15000);
-        });
-
-        let response = await Promise.race([timeout, request]);
+        let response = await fetchOrThrow(href, options);
 
         if (response.headers.get('Content-Type') === 'application/json') {
             return response.json();
         } else {
-            throw new Error(response.statusText);
+            throw new FetchUnexpectedFormat(response.statusText);
         }
     }
 
@@ -999,7 +1124,7 @@ button.action {
                 if (getUsername()) {
                     // auth, possibly ask to create the user
                     let token = await willGetAuthToken();
-                    reloadFile();
+                    await reloadFile();
                 } else {
                     document.body.classList.remove('enable-external-actions');
                 }
