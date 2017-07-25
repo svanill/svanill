@@ -437,8 +437,15 @@ button.action {
         return new TextDecoder().decode(arr);
     }
 
+    function atob_exceptional(ascii) {
+        try { return atob(ascii); }
+        catch (e) { throw new Base64DecodeError(); }
+    }
+
+    class Base64DecodeError extends Error {};
+
     function u_atob(ascii) {
-        return Uint8Array.from(atob(ascii), c => c.charCodeAt(0));
+        return Uint8Array.from(atob_exceptional(ascii), c => c.charCodeAt(0));
     }
 
     function u_btoa(buffer) {
@@ -540,6 +547,20 @@ button.action {
         ].join('.');
     }
 
+    function json_parse_exceptional(string) {
+        try { return JSON.parse(string); }
+        catch (e) { throw new JSONDecodeError(); }
+    }
+
+    class JSONDecodeError extends Error {};
+
+    function crypto_subtle_decrypt_exceptional(algorithm, key, data) {
+        return crypto.subtle.decrypt(algorithm, key, data)
+        .catch(e => { throw new SubtleDecryptError; });
+    }
+
+    class SubtleDecryptError extends Error {};
+
     /**
      * Decrypt data using 256 AES in GCM mode, deriving the key with PBKDF2.
      *
@@ -553,7 +574,7 @@ button.action {
     async function willDecryptCiphertext(encryptedBox, secret) {
         let [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
         let [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
-        let additionalData = JSON.parse(bufToString(b_ad));
+        let additionalData = json_parse_exceptional(bufToString(b_ad));
 
         let optionsPBKDF2 = {
             salt: additionalData.salt || '',
@@ -562,7 +583,7 @@ button.action {
 
         let baseKey = await willGenerateKeyPBKDF2(secret)
         let derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
-        let b_dec = await crypto.subtle.decrypt(
+        let b_dec = await crypto_subtle_decrypt_exceptional(
             {
                 name: 'AES-GCM',
                 iv: b_iv,
@@ -721,7 +742,11 @@ button.action {
 
             setPlaintext(plaintext);
         } catch (e) {
-            console.error(e);
+            if (!(e instanceof JSONDecodeError
+                || e instanceof Base64DecodeError
+                || e instanceof SubtleDecryptError)) {
+                console.error(e);
+            }
             setCiphertextError('Cannot decrypt, most likely the ciphertext is not correct: focus the cleartext to refresh the ciphertext');
         };
     }
