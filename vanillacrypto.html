@@ -1162,8 +1162,9 @@ button.action {
     }
 
     getLoginButtonDOMElement().addEventListener('click', ev => attemptLogin());
-    window.addEventListener('keyup', ev => event.key === 'Enter' && attemptLogin());
-
+    document.querySelectorAll('#login-dialog .ig-text').forEach(elem => {
+        elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
+    });
     getLogoutButtonDOMElement().addEventListener('click', () => {
         document.location.reload();
     });
