@@ -362,7 +362,7 @@ button.action {
 
 </style>
 </head>
-<body spellcheck="false" class="require-login enable-external-actions">
+<body spellcheck="false" class="require-login enable-external-actions" onload="onPageLoaded()">
 
 <div id="salt-is-missing">
     You didn't set a "salt". Open the file and read the instructions near
@@ -428,7 +428,7 @@ button.action {
 <p id="error-bar"></p>
 <div id="overlay" class="is-hidden"><div id="spinner"></div></div>
 
-<script>
+<script id="the-script">
 
     function stringToUint8Array(text) {
         return new TextEncoder().encode(text);
@@ -693,8 +693,6 @@ button.action {
         }, 10);
     }
 
-    getErrorBarDOMElement().addEventListener('click', (ev) => discardLatestError());
-
     let toggleOverlay = (isVisible) => {
         getOVerlayDOMElement().classList.toggle('is-hidden', Boolean(!isVisible));
     }
@@ -716,18 +714,7 @@ button.action {
         }
     };
 
-    // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
-    // change the ciphertext without reason
-    getPlaintextDOMElement().addEventListener('focus', ev => {
-        if (ciphertextHasError()) { encryptPlaintextAndSetCiphertext(); }
-    });
-
     getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
-
-    // redo encryption if any of the fields used to encrypt has changed
-    getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
-        elem.addEventListener('input', ev => encryptPlaintextAndSetCiphertext());
-    });
 
     async function updatePlaintextFromCiphertext() {
         setCiphertextError('');
@@ -752,12 +739,7 @@ button.action {
         };
     }
 
-    // redo decryption if the ciphertext has changed (or may have changed)
-    ['input', 'focus'].forEach(eventType => {
-        getCiphertextDOMElement().addEventListener(eventType, ev => updatePlaintextFromCiphertext())
-    });
-
-    getDownloadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
+    async function onDownloadCiphertextButtonClicked(ev) {
         ev.preventDefault();
 
         let encryptedBox = await willRequestEncryption(getPlaintext());
@@ -765,18 +747,18 @@ button.action {
         const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
 
         triggerDownloadDialog(blob, filename);
-    });
+    }
 
-    getDownloadCleartextButtonDOMElement().addEventListener('click', ev => {
+    function onDownloadCleartextButtonClicked(ev) {
         ev.preventDefault();
 
         const blob = new Blob([getPlaintext()], {type: "plain/text"});
         const filename = makeDateTimePrefix(new Date()) + '_cleartext_vanillacrypto.txt';
 
         triggerDownloadDialog(blob, filename);
-    });
+    }
 
-    getReloadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
+    async function onReloadCiphertextButtonClicked(ev) {
         ev.preventDefault();
         toggleOverlay(true);
         try {
@@ -786,7 +768,7 @@ button.action {
             pushErrorToDisplayQueue(e);
             toggleOverlay(false);
         }
-    });
+    }
 
     async function _willGetAuthToken() {
         try {
@@ -914,7 +896,7 @@ button.action {
         });
     })();
 
-    getUploadCiphertextButtonDOMElement().addEventListener('click', async function(ev) {
+    async function onUploadCiphertextButtonClicked(ev) {
         ev.preventDefault();
 
         // XXX this is ok as long as we support just a single file
@@ -947,7 +929,7 @@ button.action {
         }
 
         toggleOverlay(false);
-    });
+    };
 
     async function reloadFile() {
         try {
@@ -1128,19 +1110,6 @@ button.action {
         }
     }
 
-    if (!getPBKDF2Salt()) {
-        getSaltIsMissingDOMElement().style.display = 'block';
-    }
-
-
-    [getSecretDOMElement(), getConfirmSecretDOMElement()].forEach((elem) => {
-        let loginBtn = getLoginButtonDOMElement();
-
-        elem.addEventListener('input', () => {
-            loginBtn.disabled = getConfirmSecret() !== getSecret();
-        });
-    });
-
     async function attemptLogin() {
         if (getConfirmSecret() !== getSecret()) {
             window.alert('The passwords don\'t match');
@@ -1162,14 +1131,48 @@ button.action {
         }
     }
 
-    getLoginButtonDOMElement().addEventListener('click', ev => attemptLogin());
-    document.querySelectorAll('#login-dialog .ig-text').forEach(elem => {
-        elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
-    });
-    getLogoutButtonDOMElement().addEventListener('click', () => {
-        document.location.reload();
-    });
+    function onPageLoaded() {
 
+        getErrorBarDOMElement().addEventListener('click', (ev) => discardLatestError());
+        // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
+        // change the ciphertext without reason
+        getPlaintextDOMElement().addEventListener('focus', ev => {
+            if (ciphertextHasError()) { encryptPlaintextAndSetCiphertext(); }
+        });
+        // redo encryption if any of the fields used to encrypt has changed
+        getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
+            elem.addEventListener('input', ev => encryptPlaintextAndSetCiphertext());
+        });
+        // redo decryption if the ciphertext has changed (or may have changed)
+        ['input', 'focus'].forEach(eventType => {
+            getCiphertextDOMElement().addEventListener(eventType, ev => updatePlaintextFromCiphertext())
+        });
+
+        getDownloadCiphertextButtonDOMElement().addEventListener('click', onDownloadCiphertextButtonClicked);
+        getDownloadCleartextButtonDOMElement().addEventListener('click', onDownloadCleartextButtonClicked);
+        getReloadCiphertextButtonDOMElement().addEventListener('click', onReloadCiphertextButtonClicked);
+        getUploadCiphertextButtonDOMElement().addEventListener('click', onUploadCiphertextButtonClicked);
+
+        if (!getPBKDF2Salt()) {
+            getSaltIsMissingDOMElement().style.display = 'block';
+        }
+
+        [getSecretDOMElement(), getConfirmSecretDOMElement()].forEach((elem) => {
+            let loginBtn = getLoginButtonDOMElement();
+
+            elem.addEventListener('input', () => {
+                loginBtn.disabled = getConfirmSecret() !== getSecret();
+            });
+        });
+
+        getLoginButtonDOMElement().addEventListener('click', ev => attemptLogin());
+        document.querySelectorAll('#login-dialog .ig-text').forEach(elem => {
+            elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
+        });
+        getLogoutButtonDOMElement().addEventListener('click', () => {
+            document.location.reload();
+        });
+    }
 
 
 </script>
