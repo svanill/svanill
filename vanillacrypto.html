@@ -459,7 +459,7 @@ button.action {
     }
 
     function bufToHex(buffer) {
-        return buffer.reduce((a, b) => a + ('0' + b.toString(16)).slice(-2), '');
+        return new Uint8Array(buffer).reduce((a, b) => a + ('0' + b.toString(16)).slice(-2), '');
     }
 
     function getRandomHexString(length) {
