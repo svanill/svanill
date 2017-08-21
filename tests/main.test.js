@@ -178,3 +178,246 @@ describe('getRandomHexString', () => {
         expect(result).toEqual(expected);
     });
 });
+
+describe('json_parse_exceptional',  () => {
+    it('parses correct json', () => {
+        const result = json_parse_exceptional('{"a":1,"b":{"c":"foo"},"d":false, "e":true}');
+        const expected = { a: 1, b: {c: 'foo'}, d: false, e: true };
+        expect(result).toEqual(expected);
+    });
+
+    it('throw JSONDecodeError on bogus data', () => {
+        const raiseError = () => json_parse_exceptional('x');
+        expect(raiseError).toThrowError(JSONDecodeError);
+    });
+
+    it('throw JSONDecodeError on the empty string', () => {
+        const raiseError = () => json_parse_exceptional('');
+        expect(raiseError).toThrowError(JSONDecodeError);
+    });
+});
+
+describe('willGenerateKeyPBKDF2',  () => {
+    it('generates a non-extractable, derivable-only key', async function() {
+        const key = await willGenerateKeyPBKDF2('such secret');
+        expect(key.extractable).toBe(false);
+        expect(key.usages).toEqual(['deriveKey']);
+    });
+
+    it('throw GenerateKeyError on an empty secret', async function() {
+        try {
+            await willGenerateKeyPBKDF2('');
+            throw new Error('Expected exception');
+        } catch(e) {
+            expect(e instanceof GenerateKeyError).toBe(true);
+        }
+    });
+});
+
+describe('willDeriveKey',  () => {
+    it('derives a key', async function() {
+        const baseKey = await willGenerateKeyPBKDF2('such secret');
+        const key = await willDeriveKey(baseKey, {
+            saltString: 'this is a salt',
+            iterations: 2,
+        });
+        expect(key.extractable).toBe(false);
+        expect(key.usages).toEqual(['encrypt', 'decrypt']);
+    });
+
+    it('throw DeriveKeyError if iterations is not a number', async function() {
+        const baseKey = await willGenerateKeyPBKDF2('such secret');
+        try {
+            await willDeriveKey(baseKey, {
+                saltString: 'this is a salt',
+                iterations: 'not a number',
+            });
+            throw new Error('Expected exception');
+        } catch(e) {
+            expect(e instanceof DeriveKeyError).toBe(true);
+        }
+    });
+});
+
+describe('willEncryptPlaintext',  () => {
+    const plaintext = 'some text';
+    const secret = 'such secret';
+    const optionsPBKDF2 = {
+        salt: 'this is a salt',
+        iterations: 2,
+    };
+    const b_iv = new Uint8Array(16);
+
+    it('produces the same result if the parameters did not change', async function() {
+        const result1 = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+        const result2 = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+        expect(result1).toBe(result2);
+    });
+
+    it('produces different results if the salt has changed', async function() {
+        const result1 = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+        const result2 = await willEncryptPlaintext(plaintext, secret, {
+            salt: 'a different salt',
+            iterations: optionsPBKDF2.iterations,
+        }, b_iv);
+        expect(result1).not.toBe(result2);
+    });
+
+    it('produces different results if the iterations has changed', async function() {
+        const result1 = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+        const result2 = await willEncryptPlaintext(plaintext, secret, {
+            salt: optionsPBKDF2.salt,
+            iterations: 3,
+        }, b_iv);
+        expect(result1).not.toBe(result2);
+    });
+
+    it('produces different results if the plaintext has changed', async function() {
+        const result1 = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+        const result2 = await willEncryptPlaintext('different plaintext', secret, optionsPBKDF2, b_iv);
+        expect(result1).not.toBe(result2);
+    });
+
+    it('produces different results if the secret has changed', async function() {
+        const result1 = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+        const result2 = await willEncryptPlaintext(plaintext, 'different secret', optionsPBKDF2, b_iv);
+        expect(result1).not.toBe(result2);
+    });
+
+    it('produces different results if the iv has changed', async function() {
+        const b_iv_1 = new Uint8Array(16);
+        const b_iv_2 = new Uint8Array(16);
+        b_iv_2.set([1, 2, 3]);
+
+        const result1 = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv_1);
+        const result2 = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv_2);
+        expect(result1).not.toBe(result2);
+    });
+
+    it('produces a string made by three parts: the pbkdf2 options, the iv and the encoded data', async function() {
+        const result = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+        expect(typeof result).toBe('string');
+        const parts = result.split('.');
+        expect(parts.length).toBe(3);
+        const [ad, iv, ciphertext] = parts;
+
+        expect(iv).toBe('AAAAAAAAAAAAAAAAAAAAAA==');
+        expect(atob(iv)).toBe('\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+
+        expect(ad).toBe('eyJzYWx0IjoidGhpcyBpcyBhIHNhbHQiLCJpdGVyYXRpb25zIjoyfQ==');
+        // note that this may fail if the json ended up with a different keys' order
+        expect(atob(ad)).toBe('{"salt":"this is a salt","iterations":2}');
+
+        expect(ciphertext).toBe('6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==');
+        // you should find a test that revert this ciphertext
+    });
+});
+
+describe('willDecryptCiphertext',  function () {
+    it('can decrypt encrypted data', async function() {
+        const secret = 'such secret';
+        const encryptedBox = 'eyJzYWx0IjoidGhpcyBpcyBhIHNhbHQiLCJpdGVyYXRpb25zIjoyfQ==.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+        const decryptedBox = await willDecryptCiphertext(encryptedBox, secret);
+
+        expect(decryptedBox.plaintext).not.toBeUndefined();
+        expect(decryptedBox.plaintext).toBe('some text');
+
+        expect(decryptedBox.additionalData).not.toBeUndefined();
+        expect(decryptedBox.additionalData).toEqual({ salt: 'this is a salt', iterations: 2 });
+
+        expect(decryptedBox.iv).not.toBeUndefined();
+        expect(decryptedBox.iv).toEqual(new Uint8Array(16));
+    });
+
+    it('throws JSONDecodeError if it cannot decode the additional data', async function() {
+        const secret = 'such secret';
+        const encryptedBox = btoa('WRONG_ADDITIONAL_DATA') + '.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+
+        try {
+            await willDecryptCiphertext(encryptedBox, secret);
+            throw new Error('Expected exception');
+        } catch(e) {
+            expect(e instanceof JSONDecodeError).toBe(true);
+        }
+    });
+
+    it('throws SubtleDecryptError if it the salt is wrong', async function() {
+        const secret = 'such secret';
+        const encryptedBox = btoa(JSON.stringify({
+            salt: 'wrong',
+            iterations: 2,
+        })) + '.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+
+        try {
+            await willDecryptCiphertext(encryptedBox, secret);
+            throw new Error('Expected exception');
+        } catch(e) {
+            expect(e instanceof SubtleDecryptError).toBe(true);
+        }
+    });
+
+    it('throws SubtleDecryptError if it the iteration count is the wrong number', async function() {
+        const secret = 'such secret';
+        const encryptedBox = btoa(JSON.stringify({
+            salt: 'this is a salt',
+            iterations: 3,
+        })) + '.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+
+        try {
+            await willDecryptCiphertext(encryptedBox, secret);
+            throw new Error('Expected exception');
+        } catch(e) {
+            expect(e instanceof SubtleDecryptError).toBe(true);
+        }
+    });
+
+    it('throws DeriveKeyError if it the iteration count is not a number', async function() {
+        const secret = 'such secret';
+        const encryptedBox = btoa(JSON.stringify({
+            salt: 'this is a salt',
+            iterations: 'not a number',
+        })) + '.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+
+        try {
+            await willDecryptCiphertext(encryptedBox, secret);
+            throw new Error('Expected exception');
+        } catch(e) {
+            expect(e instanceof DeriveKeyError).toBe(true);
+        }
+    });
+
+    it('throws SubtleDecryptError if it the ciphertext is wrong', async function() {
+        const secret = 'such secret';
+        const encryptedBox = 'eyJzYWx0IjoidGhpcyBpcyBhIHNhbHQiLCJpdGVyYXRpb25zIjoyfQ==.AAAAAAAAAAAAAAAAAAAAAA==.' + btoa('wrong');
+
+        try {
+            await willDecryptCiphertext(encryptedBox, secret);
+            throw new Error('Expected exception');
+        } catch(e) {
+            expect(e instanceof SubtleDecryptError).toBe(true);
+        }
+    });
+});
+
+describe('encryptor and decryptor uses the same format',  function () {
+    it('can decrypt encrypted data', async function() {
+        // feeding willEncryptPlaintext to willDecryptCiphertext ensure that when we
+        // tested the two functions separatedly we didn't expect uncompatible formats.
+
+        const plaintext = 'some text';
+        const secret = 'such secret';
+        const optionsPBKDF2 = {
+            salt: 'this is a salt',
+            iterations: 2,
+        };
+        const b_iv = new Uint8Array(16);
+
+        const encryptedBox = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+        const decryptedBox = await willDecryptCiphertext(encryptedBox, secret);
+
+        expect(decryptedBox.additionalData).not.toBeUndefined();
+        expect(decryptedBox.iv).not.toBeUndefined();
+        expect(decryptedBox.plaintext).not.toBeUndefined();
+        expect(decryptedBox.plaintext).toBe(plaintext);
+    });
+});
