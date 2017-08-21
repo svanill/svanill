@@ -592,7 +592,7 @@ button.action {
 
         let optionsPBKDF2 = {
             salt: additionalData.salt || '',
-            iterations: additionalData.iterations || '',
+            iterations: additionalData.iterations || 1,
         };
 
         let baseKey = await willGenerateKeyPBKDF2(secret)
