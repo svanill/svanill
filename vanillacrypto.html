@@ -468,35 +468,48 @@ button.action {
         return bufToHex(array).slice(0, length);
     }
 
-    function willGenerateKeyPBKDF2(secret) {
+    async function willGenerateKeyPBKDF2(secret) {
         if (!secret) {
             // Firefox doesn't allow it, Chrome does. Let's make it consistent.
-            throw new Error('Cannot generate a key using an empty secret');
+            throw new GenerateKeyError('Cannot generate a key using an empty secret');
         }
 
-        return crypto.subtle.importKey(
-            'raw',
-            stringToUint8Array(secret),
-            { name: 'PBKDF2' },
-            false, // whether the key can be extracted or not
-            [ 'deriveKey' ]
-        );
+        try {
+            return await crypto.subtle.importKey(
+                'raw',
+                stringToUint8Array(secret),
+                { name: 'PBKDF2' },
+                false, // whether the key can be extracted or not
+                [ 'deriveKey' ]
+            );
+        } catch (e) {
+            throw new GenerateKeyError(e.message || e.name);
+        }
     }
 
-    function willDeriveKey(baseKey, {saltString, iterations}) {
-        return crypto.subtle.deriveKey(
-            {
-                name: 'PBKDF2',
-                salt: stringToUint8Array(saltString),
-                iterations: iterations,
-                hash: 'SHA-256'
-            },
-            baseKey,
-            { "name": 'AES-GCM', "length": 256 },
-            false, // whether the key can be extracted or not
-            [ "encrypt", "decrypt" ]
-        );
+    class GenerateKeyError extends Error {};
+
+    async function willDeriveKey(baseKey, {saltString, iterations}) {
+        try {
+            return await crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: stringToUint8Array(saltString),
+                    iterations: iterations,
+                    hash: 'SHA-256'
+                },
+                baseKey,
+                { "name": 'AES-GCM', "length": 256 },
+                false, // whether the key can be extracted or not
+                [ "encrypt", "decrypt" ]
+            );
+        }
+        catch (e) {
+            throw new DeriveKeyError(e.message || e.name);
+        }
     }
+
+    class DeriveKeyError extends Error {};
 
     /**
      * Encrypt text using 256 AES in GCM mode, deriving the key with PBKDF2.
