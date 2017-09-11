@@ -421,3 +421,56 @@ describe('encryptor and decryptor uses the same format',  function () {
         expect(decryptedBox.plaintext).toBe(plaintext);
     });
 });
+
+describe('willRequestEncryption',  function () {
+    let getRandomValueStub;
+    let orig_willEncryptPlaintext = willEncryptPlaintext;
+    let orig_getPBKDF2Salt = getPBKDF2Salt;
+    let orig_getPBKDF2Iterations = getPBKDF2Iterations;
+    let orig_getSecret = getSecret;
+
+    beforeEach(() => {
+        getRandomValueStub = sinon.stub(window.crypto, 'getRandomValues');
+        willEncryptPlaintext = sinon.stub();
+        getPBKDF2Salt = sinon.stub();
+        getPBKDF2Iterations = sinon.stub();
+        getSecret = sinon.stub();
+    });
+
+    afterEach(() => {
+        getRandomValueStub.restore();
+        willEncryptPlaintext = orig_willEncryptPlaintext;
+        getPBKDF2Salt = orig_getPBKDF2Salt;
+        getPBKDF2Iterations = orig_getPBKDF2Iterations;
+        getSecret = orig_getSecret;
+    });
+
+    it('return an empty string if the plaintext is empty', function() {
+        const plaintext = '';
+        const expected = '';
+
+        expect(willRequestEncryption(plaintext)).toBe(expected);
+        expect(willEncryptPlaintext.called).toBe(false);
+    });
+
+    it('will call willEncryptPlaintext with the proper arguments', function() {
+        getSecret.returns('such secret');
+        getPBKDF2Salt.returns('this is a salt');
+        getPBKDF2Iterations.returns(2);
+        const b_iv = new Uint8Array(16);
+        b_iv.set([1, 2, 3]);
+        getRandomValueStub.callsFake((typedArray) => {
+            expect(typedArray instanceof Uint8Array).toBe(true);
+            expect(typedArray.length).toBe(16);
+        }).returns(b_iv);
+
+        willRequestEncryption('some text');
+        expect(willEncryptPlaintext.called).toBe(true);
+        expect(willEncryptPlaintext.calledWith(
+            'some text', 'such secret', {
+                salt: 'this is a salt',
+                iterations: 2,
+            }, b_iv
+        )).toBe(true);
+    });
+});
