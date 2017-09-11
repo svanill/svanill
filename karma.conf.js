@@ -25,8 +25,9 @@ module.exports = function (config) {
                 {
                     match: "**/*.test.js",
                     process: concatScriptPreProcessor({
-                        'source': path.join(__dirname, 'vanillacrypto.html'),
-                        'idList': ['the-script'],
+                        source: path.join(__dirname, 'vanillacrypto.html'),
+                        idList: ['the-script'],
+                        append: false,
                     }),
                 },
                 {
