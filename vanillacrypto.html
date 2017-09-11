@@ -1144,6 +1144,18 @@ button.action {
         }
     }
 
+    function poorDebounce(func, wait) {
+        let timeoutId = null;
+        return function() {
+            const args = arguments;
+            if (timeoutId) {
+                clearInterval(timeoutId);
+                timeoutId = null;
+            }
+            timeoutId = setTimeout(() => func.apply(null, args), wait || 50);
+        };
+    }
+
     function onPageLoaded() {
 
         getErrorBarDOMElement().addEventListener('click', (ev) => discardLatestError());
@@ -1154,11 +1166,11 @@ button.action {
         });
         // redo encryption if any of the fields used to encrypt has changed
         getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
-            elem.addEventListener('input', ev => encryptPlaintextAndSetCiphertext());
+            elem.addEventListener('input', poorDebounce(ev => encryptPlaintextAndSetCiphertext()));
         });
         // redo decryption if the ciphertext has changed (or may have changed)
         ['input', 'focus'].forEach(eventType => {
-            getCiphertextDOMElement().addEventListener(eventType, ev => updatePlaintextFromCiphertext())
+            getCiphertextDOMElement().addEventListener(eventType, poorDebounce(ev => updatePlaintextFromCiphertext()))
         });
 
         getDownloadCiphertextButtonDOMElement().addEventListener('click', onDownloadCiphertextButtonClicked);
