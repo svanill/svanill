@@ -18,6 +18,7 @@
     "testcafe": "^0.17.1"
   },
   "scripts": {
-    "test": "node node_modules/.bin/karma start"
+    "test-unit": "node node_modules/.bin/karma start",
+    "test-e2e-local": "node node_modules/.bin/testcafe --hostname localhost -c 4 'chrome --user-data-dir=.test-chrome' tests/integration/local.test.js"
   }
 }
