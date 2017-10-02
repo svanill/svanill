@@ -1,0 +1,59 @@
+version: '2'
+services:
+    user_db:
+        image: redis:3.2.8-alpine
+        expose:
+            - "6379"
+        volumes:
+            - ./var/tests/redis:/data
+    s3_like:
+        image: minio/minio:edge
+        volumes:
+            - ./var/tests/minio/config:/root/.minio
+            - ./var/tests/minio/volumes:/export
+        environment:
+            MINIO_ACCESS_KEY: test_s3_access_key
+            MINIO_SECRET_KEY: test_s3_secret_key
+            MINIO_BROWSER: 'on'
+        volumes:
+            - ./var/minio/config:/root/.minio
+            - ./var/minio/volumes:/export
+        entrypoint: minio server /export/volumes/hd1 /export/volumes/hd2 /export/volumes/hd3 /export/volumes/hd4
+        expose:
+            - "9000"
+        ports:
+            - "9000:9000"
+    web:
+        image: riquito/piggy-store-alpine
+        ports:
+            - "127.0.0.1:5000:5000"
+        depends_on:
+            - user_db
+            - s3_like
+            - createbuckets
+        links:
+            - user_db
+            - s3_like:s3like.com
+        environment:
+            APP_S3_SECURE: 'false'
+            APP_S3_KEY_ACCESS: test_s3_access_key
+            APP_S3_KEY_SECRET: test_s3_secret_key
+            APP_S3_BUCKET: testbucket
+            APP_PIGGY_HOST: '0.0.0.0'
+            APP_PIGGY_PORT: '5000'
+            APP_PIGGY_SENTRYDSN: ''
+    createbuckets:
+        image: minio/mc
+        depends_on:
+            - s3_like
+        links:
+            - s3_like:s3like.com
+        entrypoint: >
+            /bin/sh -c "
+                sleep 3;
+                /usr/bin/mc config host add s3likehost http://s3like.com:9000 test_s3_access_key test_s3_secret_key;
+                /usr/bin/mc rm -r --force s3likehost/testbucket 2&>1 > /dev/null;
+                /usr/bin/mc mb s3likehost/testbucket;
+                /usr/bin/mc policy public s3likehost/testbucket;
+                exit 0;
+            "

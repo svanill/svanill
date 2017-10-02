@@ -16,7 +16,10 @@ const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('ite
 // Url fo the service (an instance of Piggy Store) where you could optionally
 // store your encrypted data
 const STORE_URL = 'http://localhost:5000';
-const TRUSTED_UPLOAD_BASE_URL = 'http://localhost:9000/'
+// Url (prefix) that you can trust to upload files to. Make sure it ends with /
+// to not accept malicious urls (like foo.comicly.broken instead of foo.com)
+const TRUSTED_UPLOAD_BASE_URL = new URLSearchParams(document.location.search).get('upload_base_url')
+      || 'http://localhost:9000/';
 const ERRORS_QUEUE = [];
 </script>
 <style>

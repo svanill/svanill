@@ -7,14 +7,26 @@ export default class VanillaCryptoPage {
     getInputConfirmSecret() {
         return Selector('#confirm-secret');
     }
+    getInputUsername() {
+        return Selector('#username');
+    }
     getLoginButton() {
         return Selector('#login-btn');
+    }
+    getErrorBar() {
+        return Selector('#error-bar');
     }
     getLoginDialog() {
         return Selector('#login-dialog');
     }
     getMainContainer() {
         return Selector('.main-container');
+    }
+    getReloadCiphertextButton() {
+        return Selector('#reload-ciphertext');
+    }
+    getUploadCiphertextButton() {
+        return Selector('#upload-ciphertext');
     }
     isLoginButtonDisabled() {
         return this.getLoginButton().hasAttribute('disabled');
@@ -23,6 +35,13 @@ export default class VanillaCryptoPage {
         await t
             .typeText(this.getInputSecret(), 'such secret', { replace: true })
             .typeText(this.getInputConfirmSecret(), 'such secret', { replace: true })
+            .click(this.getLoginButton())
+    }
+    async loginExt(username) {
+        await t
+            .typeText(this.getInputSecret(), 'such secret', { replace: true })
+            .typeText(this.getInputConfirmSecret(), 'such secret', { replace: true })
+            .typeText(this.getInputUsername(), username || 'such-name', { replace: true })
             .click(this.getLoginButton())
     }
     async loginUsingKeyboard() {
