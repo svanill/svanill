@@ -979,9 +979,11 @@ button.action {
         let parsedResponse = await fetchJSONWithRetryOnAuthExpired(href, {
             method: 'POST',
             body: JSON.stringify({
-                jwt: token,
                 filename: filename,
             }),
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         })
 
         if (parsedResponse.error) {
@@ -1055,10 +1057,13 @@ button.action {
     }
 
     async function willGetFilesList() {
-        let url = new URL(STORE_URL + '/files/')
-        url.searchParams.append('jwt', await willGetAuthToken());
-
-        let jsonResponse = await fetchJSONWithRetryOnAuthExpired(url.href);
+        let href = STORE_URL + '/files/';
+        let token = await willGetAuthToken();
+        let jsonResponse = await fetchJSONWithRetryOnAuthExpired(href, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
         if (jsonResponse.error) { throw new CannotRetrieveFilesListError(jsonResponse.error); }
         return jsonResponse.content;
     }
@@ -1111,15 +1116,17 @@ button.action {
         return Promise.race([timeout, request]);
     }
 
-    async function fetchJSON(href, options) {
-        options = Object.assign({}, {
-            headers: {},
+    async function fetchJSON(href, options = {}) {
+        options = {
             mode: 'cors',
             cache: 'no-store',
             referrerPolicy: 'no-referrer',
-        }, options || {});
-
-        options.headers['Content-Type'] = 'application/json';
+            ...options,
+            headers: {
+                ...options.headers,
+                'Content-Type': 'application/json',
+            },
+        };
 
         let response = await fetchOrThrow(href, options);
 
