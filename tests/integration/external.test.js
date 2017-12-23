@@ -28,7 +28,7 @@ test('If the user is prompted to create an account and answer "no" an error is d
 
     await t
         .expect(page.getErrorBar().visible).ok()
-        .expect(page.getErrorBar().innerText).eql('User refused to create an account')
+        .expect(page.getErrorBar().innerText).eql('Cannot proceed')
 });
 
 test('Login fails when the external service does not accept the credentials', async t => {

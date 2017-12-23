@@ -796,10 +796,12 @@ button.action {
         } catch (e) {
             if (e instanceof UserDoesNotExistError) {
                 if (!window.confirm('No user found with that username, would you like to create it?')) {
-                    throw new Error('User refused to create an account');
+                    throw new Error('Cannot proceed');
                 }
 
                 return (await willCreateNewUser()).content.token;
+            } else if (e instanceof SubtleDecryptError) {
+                throw new Error('The password is not correct');
             } else {
                 throw e;
             }
