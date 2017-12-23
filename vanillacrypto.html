@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8" />
+<title>Vanillacrypto</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
 // Salt, it ensures that two people with the same password will generate
@@ -175,7 +176,7 @@ textarea:focus::placeholder {
     to   { opacity: 1}
 }
 
-#login-dialog {
+#login-form {
     display: flex;
     height: 100%;
     align-items: center;
@@ -238,7 +239,7 @@ textarea:focus::placeholder {
     font-size: 0.8em;
 }
 
-#login-dialog {
+#login-form {
     display: none;
 }
 
@@ -246,7 +247,7 @@ textarea:focus::placeholder {
     display: none;
 }
 
-.require-login #login-dialog {
+.require-login #login-form {
     display: flex;
 }
 
@@ -372,7 +373,7 @@ button.action {
     PBKDF2_SALT or pass the query parameter "salt".
 </div>
 
-<div id="login-dialog" class="page-load">
+<form id="login-form" class="page-load">
     <div class="input-group">
         <input id="secret" type="password"
             class="ig-text"
@@ -399,11 +400,11 @@ button.action {
         <label class="ig-label" for="username">Username</label>
     </div>
     <button id="login-btn" type="submit" disabled="disabled" autocomplete="off">Unlock</button>
-</div>
+</form>
 
 <button id="logout-btn">Logout</button>
 
-<div class="main-container">
+<main class="main-container">
 
 <div class="plaintext-container">
     <p class="action-bar"><label class="title">Cleartext</label> <button id="download-cleartext" class="action">⬇ download</button></p>
@@ -426,7 +427,7 @@ button.action {
 <!-- invisible anchor used to trigger the download dialog -->
 <a id ="download-dialog-anchor" href="" style="display:none"></a>
 
-</div>
+</main>
 
 <p id="error-bar"></p>
 <div id="overlay" class="is-hidden"><div id="spinner"></div></div>
@@ -671,6 +672,7 @@ button.action {
     let getUploadCiphertextButtonDOMElement = () => document.getElementById('upload-ciphertext');
     let getReloadCiphertextButtonDOMElement = () => document.getElementById('reload-ciphertext');
 
+    let getLoginFormDOMElement = () => document.getElementById('login-form');
     let getLoginButtonDOMElement = () => document.getElementById('login-btn');
     let getLogoutButtonDOMElement = () => document.getElementById('logout-btn');
     let getMainContainerDOMElement = () => document.getElementById('main-container');
@@ -1193,8 +1195,8 @@ button.action {
             });
         });
 
-        getLoginButtonDOMElement().addEventListener('click', ev => attemptLogin());
-        document.querySelectorAll('#login-dialog .ig-text').forEach(elem => {
+        getLoginFormDOMElement().addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
+        document.querySelectorAll('#login-form .ig-text').forEach(elem => {
             elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
         });
         getLogoutButtonDOMElement().addEventListener('click', () => {

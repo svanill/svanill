@@ -17,7 +17,7 @@ export default class VanillaCryptoPage {
         return Selector('#error-bar');
     }
     getLoginDialog() {
-        return Selector('#login-dialog');
+        return Selector('#login-form');
     }
     getMainContainer() {
         return Selector('.main-container');
