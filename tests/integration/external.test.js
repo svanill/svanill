@@ -53,7 +53,10 @@ test('When the user click on upload, delete the text and reload, the text is bac
     await page.focus(page.getCleartextTextarea())
 
     await t
-        .pressKey('ctrl+a delete')
+        .click(page.getCleartextTextarea())
+        .expect(page.getCleartextTextarea().focused).ok()
+        .pressKey('ctrl+a backspace')
+        .expect(page.getCleartextTextarea().value).eql('', { timeout: 500 })
         .typeText(page.getCleartextTextarea(), 'hello')
 
     await t
