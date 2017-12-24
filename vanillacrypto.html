@@ -826,7 +826,7 @@ button.action {
     })();
 
     async function willRequestChallenge() {
-        let url = new URL(STORE_URL + '/user/auth/request-challenge');
+        let url = new URL(STORE_URL + '/auth/request-challenge');
         url.searchParams.append('username', getUsername());
 
         let parsedResponse = await fetchJSON(url.href);
@@ -847,7 +847,7 @@ button.action {
         let answerBox = await willDecryptCiphertext(challenge, getSecret());
         let answer = answerBox.plaintext;
 
-        let url = new URL(STORE_URL + '/user/auth/answer-challenge');
+        let url = new URL(STORE_URL + '/auth/answer-challenge');
         let parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
             method: 'POST',
             body: JSON.stringify({
@@ -865,7 +865,7 @@ button.action {
 
     async function willCreateNewUser() {
         let h_answer = getRandomHexString(32);
-        let url = new URL(STORE_URL + '/user/');
+        let url = new URL(STORE_URL + '/users/');
         let parsedResponse = await fetchJSON(url.href, {
             method: 'POST',
             body: JSON.stringify({
@@ -974,7 +974,7 @@ button.action {
     }
 
     async function willRequestUploadUrl(filename) {
-        let href = STORE_URL + '/file/request-upload-url';
+        let href = STORE_URL + '/files/request-upload-url';
         let token = await willGetAuthToken();
         let parsedResponse = await fetchJSONWithRetryOnAuthExpired(href, {
             method: 'POST',
