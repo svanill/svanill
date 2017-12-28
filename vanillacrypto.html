@@ -25,10 +25,20 @@ const ERRORS_QUEUE = [];
 </script>
 <style>
 
+:root {
+  --main-bg-color: #32393F;
+  --main-fg-color: rgb(194, 196, 198);
+  --secondary-bg-color: #033649;
+  --highlight-color: #696969;
+  --secondary-fg-color: #CDB380;
+  --warning-bg-color: #ecdb83;
+  --warning-fg-color: #db1b1b;
+}
+
 html {
-    background-color: #cad8d9;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
-    background: #32393F;
+    background-color: var(--main-bg-color);
+    color: var(--main-fg-color);
     height: 100%;
 }
 
@@ -40,6 +50,7 @@ body {
     margin: 0 auto;
     display: flex;
     justify-content: center;
+    align-items: center;
     flex-direction: column;
     min-height: 100%;
 }
@@ -109,7 +120,7 @@ input[type=text], input[type=password] {
 }
 
 #ciphertext-error-bar {
-    color: red;
+    color: var(--warning-fg-color);
 }
 
 span.error:empty:before {
@@ -117,7 +128,7 @@ span.error:empty:before {
 }
 
 #download-cleartext {
-    color: #af0303;
+    color: var(--warning-fg-color);
 }
 
 button {
@@ -127,8 +138,8 @@ button {
 
 #salt-is-missing {
     display: none;
-    color: #dc2e2e;
-    background-color: #fff799;
+    background-color: var(--secondary-fg-color);
+    color: var(--warning-fg-color);
     margin-bottom: 1em;
     padding: 0.3em;
     font-weight: bold;
@@ -177,70 +188,26 @@ textarea:focus::placeholder {
 }
 
 #login-form {
-    display: flex;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    color: rgb(194, 196, 198);
+    display: none;
     flex-direction: column;
-}
-
-.input-group {
-    position: relative;
-    height: 1.3em;
+    align-items: center;
     width: 300px;
-    margin-bottom: 2em;
 }
 
-.ig-text {
-    position: absolute;
-    width: 100%;
-    height: 100%;
+.login-text {
+	/*background-color: var(--main-fg-color);*/
     background-color: transparent;
+    color: var(--main-fg-color);
     border: none;
     outline: none;
-    color: rgb(194, 196, 198);
-    z-index: 2;
-    box-sizing: border-box;
-    border-bottom: 2px solid #696969;
+	border-bottom: 2px solid var(--highlight-color);
+    margin-bottom: 2em;
+    border-radius: 2px;
+    width: 90%;
 }
 
-.ig-text ~ .ig-helpers {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 2px;
-    background-color: rgb(194, 196, 198);
-    visibility: hidden;
-    transform: scaleX(0);
-    transition: all 0.3s ease-in-out 0s;
-}
-
-.ig-text:focus ~ .ig-helpers {
-    visibility: visible;
-    transform: scaleX(1);
-}
-
-.ig-label {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    text-align: center;
-    transition: transform 0.3s;
-}
-
-.ig-text:invalid {
-    box-shadow: none;
-}
-
-.ig-text:focus ~ .ig-label,
-.ig-text:valid ~ .ig-label {
-    transform: translate(0, -16px) scale(.9);
+.login-label {
     font-size: 0.8em;
-}
-
-#login-form {
-    display: none;
 }
 
 .require-login .main-container {
@@ -290,8 +257,8 @@ button.action {
 
 #error-bar {
     line-height: 1.5em;
-    background-color: #ea2e2e;
-    color: black;
+    background-color: var(--warning-fg-color);
+    color: var(--warning-bg-color);
     text-align: center;
     position: fixed;
     top: 0;
@@ -374,31 +341,21 @@ button.action {
 </div>
 
 <form id="login-form" class="page-load">
-    <div class="input-group">
-        <input id="secret" type="password"
-            class="ig-text"
-            required=""
-            autocomplete="new-password" />
-        <i class="ig-helpers" ></i>
-        <label class="ig-label" for="secret">Password</label>
-    </div>
-    <div class="input-group">
-        <input id="confirm-secret" type="password"
-            class="ig-text"
-            required=""
-            autocomplete="new-password" />
-        <i class="ig-helpers" ></i>
-        <label class="ig-label" for="confirm-secret">Confirm Password</label>
-    </div>
-    <div class="input-group" >
-        <input id="username" type="text"
-            title="You can omit the username, but then you won't be able to access external services (e.g. to upload/sync your files)"
-            class="ig-text"
-            required=""
-            autocomplete="off" />
-        <i class="ig-helpers"></i>
-        <label class="ig-label" for="username">Username</label>
-    </div>
+    <label class="login-label" for="username">Username (optional)</label>
+    <input id="username" type="text"
+        title="You can omit the username, but then you won't be able to access external services (e.g. to upload/sync your files)"
+        class="login-text"
+        autocomplete="off" />
+    <label class="login-label" for="secret">Password</label>
+    <input id="secret" type="password"
+        class="login-text"
+        required=""
+        autocomplete="new-password" />
+    <label class="login-label" for="confirm-secret">Confirm Password</label>
+    <input id="confirm-secret" type="password"
+        class="login-text"
+        required=""
+        autocomplete="new-password" />
     <button id="login-btn" type="submit" disabled="disabled" autocomplete="off">Unlock</button>
 </form>
 
@@ -1205,7 +1162,7 @@ button.action {
         });
 
         getLoginFormDOMElement().addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
-        document.querySelectorAll('#login-form .ig-text').forEach(elem => {
+        document.querySelectorAll('#login-form .login-text').forEach(elem => {
             elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
         });
         getLogoutButtonDOMElement().addEventListener('click', () => {
