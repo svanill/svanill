@@ -33,12 +33,15 @@ const ERRORS_QUEUE = [];
   --secondary-fg-color: #CDB380;
   --warning-color: #ffcc00;
   --error-color: #cc3300;
+  --font-default: Verdana, Geneva, Tahoma, sans-serif;
+  --font-mono: Andale Mono, AndaleMono, Consolas, Monaco, monospace;
+  --font-textarea: "Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 
 html {
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
     background-color: var(--main-bg-color);
     color: var(--main-fg-color);
+    font-family: var(--font-default);
     height: 100%;
 }
 
@@ -116,7 +119,7 @@ input[type=text], input[type=password] {
 }
 
 #ciphertext {
-    font-family: Andale Mono, AndaleMono, Consolas, Monaco, monospace;
+    font-family: var(--font-mono);
 }
 
 #ciphertext-error-bar {
@@ -142,7 +145,6 @@ button {
     color: black;
     margin-bottom: 1em;
     padding: 0.3em;
-    font-weight: bold;
     text-align: center;
 }
 
@@ -171,7 +173,7 @@ textarea::placeholder {
     font-weight: bold;
     color: var(--main-fg-color);
     opacity: 1;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-textarea);
 }
 
 textarea:focus::placeholder {
@@ -271,7 +273,7 @@ button.action {
     content: "x";
     position: absolute;
     right: 0.5em;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-weight: bold;
 }
 
