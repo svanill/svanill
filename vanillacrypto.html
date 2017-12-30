@@ -197,7 +197,6 @@ textarea:focus::placeholder {
 }
 
 .login-text {
-	/*background-color: var(--main-fg-color);*/
     background-color: transparent;
     color: var(--main-fg-color);
     border: none;
@@ -212,7 +211,10 @@ textarea:focus::placeholder {
     font-size: 0.8em;
 }
 
-.require-login .main-container {
+.require-login .main-container,
+.require-login #logout-btn,
+.external.action,
+#overlay.is-hidden {
     display: none;
 }
 
@@ -220,16 +222,8 @@ textarea:focus::placeholder {
     display: flex;
 }
 
-.require-login #logout-btn {
-    display: none;
-}
-
 .enable-external-actions .external.action {
     display: initial;
-}
-
-.external.action {
-    display: none;
 }
 
 .actions {
@@ -303,7 +297,6 @@ button.action {
 
 #overlay {
     display: flex;
-    height: 100%;
     background-color: rgba(159, 159, 187, 0.56);
     position: fixed;
     top: 0;
@@ -326,10 +319,6 @@ button.action {
   border: 2px solid #ccc;
   border-top-color: #333;
   animation: spinner-animation .6s linear infinite;
-}
-
-#overlay.is-hidden {
-    display: none;
 }
 
 
