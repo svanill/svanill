@@ -569,7 +569,7 @@ button.action {
     function willRequestEncryption(plaintext) {
         if (!plaintext) return '';
         let secret = getSecret();
-        let b_iv = window.crypto.getRandomValues(new Uint8Array(16));
+        let b_iv = window.crypto.getRandomValues(new Uint8Array(12));
         let optionsPBKDF2 = {
             salt: getPBKDF2Salt(),
             iterations: getPBKDF2Iterations(),
