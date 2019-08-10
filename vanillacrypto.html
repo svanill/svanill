@@ -420,7 +420,7 @@ button.action {
     }
 
     function getRandomHexString(length) {
-        let array = new Uint8Array(Math.ceil(length/2));
+        const array = new Uint8Array(Math.ceil(length/2));
         window.crypto.getRandomValues(array);
         return bufToHex(array).slice(0, length);
     }
@@ -498,10 +498,10 @@ button.action {
      * >>> });
      */
     async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
-        let baseKey = await willGenerateKeyPBKDF2(secret)
-        let derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
-        let b_ad = stringToUint8Array(JSON.stringify(optionsPBKDF2));
-        let b_enc = await crypto.subtle.encrypt(
+        const baseKey = await willGenerateKeyPBKDF2(secret)
+        const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
+        const b_ad = stringToUint8Array(JSON.stringify(optionsPBKDF2));
+        const b_enc = await crypto.subtle.encrypt(
             {
                 name: 'AES-GCM',
                 iv: b_iv,
@@ -543,18 +543,18 @@ button.action {
      *
      */
     async function willDecryptCiphertext(encryptedBox, secret) {
-        let [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
-        let [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
-        let additionalData = json_parse_exceptional(bufToString(b_ad));
+        const [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
+        const [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
+        const additionalData = json_parse_exceptional(bufToString(b_ad));
 
-        let optionsPBKDF2 = {
+        const optionsPBKDF2 = {
             salt: additionalData.salt || '',
             iterations: additionalData.iterations || 1,
         };
 
-        let baseKey = await willGenerateKeyPBKDF2(secret)
-        let derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
-        let b_dec = await crypto_subtle_decrypt_exceptional(
+        const baseKey = await willGenerateKeyPBKDF2(secret)
+        const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
+        const b_dec = await crypto_subtle_decrypt_exceptional(
             {
                 name: 'AES-GCM',
                 iv: b_iv,
@@ -573,9 +573,9 @@ button.action {
 
     function willRequestEncryption(plaintext) {
         if (!plaintext) return '';
-        let secret = getSecret();
-        let b_iv = window.crypto.getRandomValues(new Uint8Array(12));
-        let optionsPBKDF2 = {
+        const secret = getSecret();
+        const b_iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const optionsPBKDF2 = {
             salt: getPBKDF2Salt(),
             iterations: getPBKDF2Iterations(),
         };
@@ -604,43 +604,43 @@ button.action {
         return datePart + '_' + timePart.replace(/:/g, '');
     }
 
-    let getPlaintextDOMElement = () => document.getElementById('plaintext');
-    let getPlaintext = () => getPlaintextDOMElement().value;
-    let setPlaintext = value => getPlaintextDOMElement().value = value;
+    const getPlaintextDOMElement = () => document.getElementById('plaintext');
+    const getPlaintext = () => getPlaintextDOMElement().value;
+    const setPlaintext = value => getPlaintextDOMElement().value = value;
 
-    let getCiphertextDOMElement = () => document.getElementById('ciphertext');
-    let getCiphertext = () => getCiphertextDOMElement().value;
-    let setCiphertext = value => getCiphertextDOMElement().value = value;
+    const getCiphertextDOMElement = () => document.getElementById('ciphertext');
+    const getCiphertext = () => getCiphertextDOMElement().value;
+    const setCiphertext = value => getCiphertextDOMElement().value = value;
 
-    let getSecretDOMElement = () => document.getElementById('secret');
-    let getSecret = () => getSecretDOMElement().value;
+    const getSecretDOMElement = () => document.getElementById('secret');
+    const getSecret = () => getSecretDOMElement().value;
 
-    let getPBKDF2Salt = () => PBKDF2_SALT;
-    let getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
+    const getPBKDF2Salt = () => PBKDF2_SALT;
+    const getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
 
-    let getDownloadCleartextButtonDOMElement = () => document.getElementById('download-cleartext');
-    let getDownloadCiphertextButtonDOMElement = () => document.getElementById('download-ciphertext');
-    let getDownloadDialogAnchorDOMElement = () => document.getElementById('download-dialog-anchor');
+    const getDownloadCleartextButtonDOMElement = () => document.getElementById('download-cleartext');
+    const getDownloadCiphertextButtonDOMElement = () => document.getElementById('download-ciphertext');
+    const getDownloadDialogAnchorDOMElement = () => document.getElementById('download-dialog-anchor');
 
-    let getUploadCiphertextButtonDOMElement = () => document.getElementById('upload-ciphertext');
-    let getReloadCiphertextButtonDOMElement = () => document.getElementById('reload-ciphertext');
+    const getUploadCiphertextButtonDOMElement = () => document.getElementById('upload-ciphertext');
+    const getReloadCiphertextButtonDOMElement = () => document.getElementById('reload-ciphertext');
 
-    let getLoginFormDOMElement = () => document.getElementById('login-form');
-    let getLoginButtonDOMElement = () => document.getElementById('login-btn');
-    let getLogoutButtonDOMElement = () => document.getElementById('logout-btn');
-    let getMainContainerDOMElement = () => document.getElementById('main-container');
+    const getLoginFormDOMElement = () => document.getElementById('login-form');
+    const getLoginButtonDOMElement = () => document.getElementById('login-btn');
+    const getLogoutButtonDOMElement = () => document.getElementById('logout-btn');
+    const getMainContainerDOMElement = () => document.getElementById('main-container');
 
-    let getSaltIsMissingDOMElement = () => document.getElementById('salt-is-missing');
+    const getSaltIsMissingDOMElement = () => document.getElementById('salt-is-missing');
 
-    let getUsernameDOMElement = () => document.getElementById('username');
-    let getUsername = () => getUsernameDOMElement().value;
-    let getConfirmSecretDOMElement = () => document.getElementById('confirm-secret');
-    let getConfirmSecret = () => getConfirmSecretDOMElement().value;
+    const getUsernameDOMElement = () => document.getElementById('username');
+    const getUsername = () => getUsernameDOMElement().value;
+    const getConfirmSecretDOMElement = () => document.getElementById('confirm-secret');
+    const getConfirmSecret = () => getConfirmSecretDOMElement().value;
 
-    let getOVerlayDOMElement = () => document.getElementById('overlay');
+    const getOVerlayDOMElement = () => document.getElementById('overlay');
 
-    let getErrorBarDOMElement = () => document.getElementById('error-bar');
-    let getCiphertextErrorBarDOMElement = () => document.getElementById('ciphertext-error-bar');
+    const getErrorBarDOMElement = () => document.getElementById('error-bar');
+    const getCiphertextErrorBarDOMElement = () => document.getElementById('ciphertext-error-bar');
 
     const pushErrorToDisplayQueue = (e) => {
         const errorMessage = e.message || e.name || 'Unknown error';
@@ -666,20 +666,20 @@ button.action {
         }, 10);
     }
 
-    let toggleOverlay = (isVisible) => {
+    const toggleOverlay = (isVisible) => {
         getOVerlayDOMElement().classList.toggle('is-hidden', Boolean(!isVisible));
     }
 
-    let ciphertextHasError = () => getCiphertextDOMElement().classList.contains('has-error');
-    let setCiphertextError = (errorMessage) => {
+    const ciphertextHasError = () => getCiphertextDOMElement().classList.contains('has-error');
+    const setCiphertextError = (errorMessage) => {
         const hasError = Boolean(errorMessage.trim());
         getCiphertextDOMElement().classList.toggle('has-error', hasError);
         getCiphertextErrorBarDOMElement().innerText = errorMessage;
     }
 
-    let encryptPlaintextAndSetCiphertext = async function() {
+    const encryptPlaintextAndSetCiphertext = async function() {
         try {
-            let ciphertext = await willRequestEncryption(getPlaintext());
+            const ciphertext = await willRequestEncryption(getPlaintext());
             setCiphertext(ciphertext);
             setCiphertextError('');
         } catch (e) {
@@ -715,7 +715,7 @@ button.action {
     async function onDownloadCiphertextButtonClicked(ev) {
         ev.preventDefault();
 
-        let encryptedBox = await willRequestEncryption(getPlaintext());
+        const encryptedBox = await willRequestEncryption(getPlaintext());
         const blob = new Blob([encryptedBox], {type: "plain/text"});
         const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
 
@@ -746,7 +746,7 @@ button.action {
     async function _willGetAuthToken() {
         try {
             // user exists, we've got a challenge to decrypt
-            let challenge = (await willRequestChallenge()).content.challenge
+            const challenge = (await willRequestChallenge()).content.challenge
             return (await willAnswerChallenge(challenge)).content.token;
         } catch (e) {
             if (e instanceof UserDoesNotExistError) {
@@ -769,7 +769,7 @@ button.action {
      * The token is cached unless the option {refresh: true} is provided.
      * Use fetchJSONWithRetryOnAuthExpired() to automatically refresh it.
      */
-    let willGetAuthToken = (() => {
+    const willGetAuthToken = (() => {
         let token = null;
 
         return async function(options) {
@@ -781,10 +781,10 @@ button.action {
     })();
 
     async function willRequestChallenge() {
-        let url = new URL(STORE_URL + '/auth/request-challenge');
+        const url = new URL(STORE_URL + '/auth/request-challenge');
         url.searchParams.append('username', getUsername());
 
-        let parsedResponse = await fetchJSON(url.href);
+        const parsedResponse = await fetchJSON(url.href);
 
         if (parsedResponse.error) {
             if (parsedResponse.error.code === 1005) {
@@ -799,11 +799,11 @@ button.action {
     class UserDoesNotExistError extends Error {}
 
     async function willAnswerChallenge(challenge) {
-        let answerBox = await willDecryptCiphertext(challenge, getSecret());
-        let answer = answerBox.plaintext;
+        const answerBox = await willDecryptCiphertext(challenge, getSecret());
+        const answer = answerBox.plaintext;
 
-        let url = new URL(STORE_URL + '/auth/answer-challenge');
-        let parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
+        const url = new URL(STORE_URL + '/auth/answer-challenge');
+        const parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
             method: 'POST',
             body: JSON.stringify({
                 username: getUsername(),
@@ -819,9 +819,9 @@ button.action {
     }
 
     async function willCreateNewUser() {
-        let h_answer = getRandomHexString(32);
-        let url = new URL(STORE_URL + '/users/');
-        let parsedResponse = await fetchJSON(url.href, {
+        const h_answer = getRandomHexString(32);
+        const url = new URL(STORE_URL + '/users/');
+        const parsedResponse = await fetchJSON(url.href, {
             method: 'POST',
             body: JSON.stringify({
                 username: getUsername(),
@@ -875,20 +875,20 @@ button.action {
         ev.preventDefault();
 
         // XXX this is ok as long as we support just a single file
-        let filename = getFilenameOrDefault();
+        const filename = getFilenameOrDefault();
 
         toggleOverlay(true);
 
         try {
-            let ciphertext = await willRequestEncryption(getPlaintext()); // XXX this way we upload something different from what the user sees !!!!
-            let uploadUrl = await willRequestUploadUrl(filename);
+            const ciphertext = await willRequestEncryption(getPlaintext()); // XXX this way we upload something different from what the user sees !!!!
+            const uploadUrl = await willRequestUploadUrl(filename);
             if (uploadUrl.slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
                 throw new Error('The server proposed to upload the file to an untrusted url!');
             }
             await willUploadCiphertext(uploadUrl, ciphertext);
 
-            let objectUrl = uploadUrl.replace(/\?.*$/, '');
-            let uploadedContent = await willDownload(objectUrl);
+            const objectUrl = uploadUrl.replace(/\?.*$/, '');
+            const uploadedContent = await willDownload(objectUrl);
             if (uploadedContent !== ciphertext) {
                 throw new Error('The uploaded file does not match the original file');
             }
@@ -929,9 +929,9 @@ button.action {
     }
 
     async function willRequestUploadUrl(filename) {
-        let href = STORE_URL + '/files/request-upload-url';
-        let token = await willGetAuthToken();
-        let parsedResponse = await fetchJSONWithRetryOnAuthExpired(href, {
+        const href = STORE_URL + '/files/request-upload-url';
+        const token = await willGetAuthToken();
+        const parsedResponse = await fetchJSONWithRetryOnAuthExpired(href, {
             method: 'POST',
             body: JSON.stringify({
                 filename: filename,
@@ -958,8 +958,8 @@ button.action {
 
     async function willUploadCiphertext(uploadUrl, ciphertext) {
         try {
-            let href = uploadUrl;
-            let response = await fetchOrThrow(href, {
+            const href = uploadUrl;
+            const response = await fetchOrThrow(href, {
                 headers: {
                     'Cache-Control': 'None',
                     'Expect': '100-continue',
@@ -991,7 +991,7 @@ button.action {
     class UploadCiphertextError extends Error {};
 
     async function willDownload(href) {
-        let response = await fetchOrThrow(href, {
+        const response = await fetchOrThrow(href, {
             mode: 'cors',
             cache: 'no-store',
             referrerPolicy: 'no-referrer',
@@ -1012,9 +1012,9 @@ button.action {
     }
 
     async function willGetFilesList() {
-        let href = STORE_URL + '/files/';
-        let token = await willGetAuthToken();
-        let jsonResponse = await fetchJSONWithRetryOnAuthExpired(href, {
+        const href = STORE_URL + '/files/';
+        const token = await willGetAuthToken();
+        const jsonResponse = await fetchJSONWithRetryOnAuthExpired(href, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -1062,9 +1062,9 @@ button.action {
     }
 
     async function fetchOrThrow(href, options) {
-        let request = fetch(href, options)
+        const request = fetch(href, options)
         .catch (e => { throw new FetchUnexpectedError(e); });
-        let timeout = new Promise((resolve, reject) => {
+        const timeout = new Promise((resolve, reject) => {
             // XXX we should abort the request on timeout
             setTimeout(() => reject(new FetchRequestTimedOutError()), 15000);
         });
@@ -1083,7 +1083,7 @@ button.action {
             },
         };
 
-        let response = await fetchOrThrow(href, options);
+        const response = await fetchOrThrow(href, options);
 
         if (response.headers.get('Content-Type') === 'application/json') {
             return response.json();
@@ -1100,7 +1100,7 @@ button.action {
             try {
                 if (getUsername()) {
                     // auth, possibly ask to create the user
-                    let token = await willGetAuthToken();
+                    const token = await willGetAuthToken();
                     await reloadFile();
                 } else {
                     document.body.classList.remove('enable-external-actions');
@@ -1152,7 +1152,7 @@ button.action {
         }
 
         [getSecretDOMElement(), getConfirmSecretDOMElement()].forEach((elem) => {
-            let loginBtn = getLoginButtonDOMElement();
+            const loginBtn = getLoginButtonDOMElement();
 
             elem.addEventListener('input', () => {
                 loginBtn.disabled = getConfirmSecret() !== getSecret();
