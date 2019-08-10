@@ -248,7 +248,7 @@ button.action {
     color: #af9f88;
     text-shadow: 0 0 33px black;
     font-size: 1.3em;
-    margin-right: 0.2em;
+    margin: 0 0.2em 0.2em 0;
 }
 
 #error-bar {
@@ -294,6 +294,11 @@ button.action {
     transform-origin: center bottom;
 }
 
+.no-bump {
+    animation: bounce 1s;
+    transform-origin: center bottom;
+    animation-direction: reverse;
+}
 
 #overlay {
     display: flex;
@@ -653,8 +658,10 @@ button.action {
     const displayErrorBanner = () => {
         const errorMessage = ERRORS_QUEUE.slice(-1)[0];
         getErrorBarDOMElement().classList.remove('bump');
+        getErrorBarDOMElement().classList.add('no-bump');
         setTimeout(() => {
             getErrorBarDOMElement().innerText = errorMessage || '';
+            getErrorBarDOMElement().classList.remove('no-bump');
             getErrorBarDOMElement().classList.add('bump');
         }, 10);
     }
