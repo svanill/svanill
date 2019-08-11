@@ -387,756 +387,754 @@ button.action {
 
 <script id="the-script">
 
-    function stringToUint8Array(text) {
-        return new TextEncoder().encode(text);
+function stringToUint8Array(text) {
+    return new TextEncoder().encode(text);
+}
+
+function bufToString(arr) {
+    return new TextDecoder().decode(arr);
+}
+
+function atob_exceptional(ascii) {
+    try { return atob(ascii); }
+    catch (e) { throw new Base64DecodeError(); }
+}
+
+class Base64DecodeError extends Error {};
+
+function u_atob(ascii) {
+    return Uint8Array.from(atob_exceptional(ascii), c => c.charCodeAt(0));
+}
+
+function u_btoa(buffer) {
+    var binary = [];
+    var bytes = new Uint8Array(buffer);
+    for (var i = 0, il = bytes.byteLength; i < il; i++) {
+        binary.push(String.fromCharCode(bytes[i]));
+    }
+    return btoa(binary.join(''));
+}
+
+function bufToHex(buffer) {
+    return new Uint8Array(buffer).reduce((a, b) => a + ('0' + b.toString(16)).slice(-2), '');
+}
+
+function getRandomHexString(length) {
+    const array = new Uint8Array(Math.ceil(length/2));
+    window.crypto.getRandomValues(array);
+    return bufToHex(array).slice(0, length);
+}
+
+async function willGenerateKeyPBKDF2(secret) {
+    if (!secret) {
+        // Firefox doesn't allow it, Chrome does. Let's make it consistent.
+        throw new GenerateKeyError('Cannot generate a key using an empty secret');
     }
 
-    function bufToString(arr) {
-        return new TextDecoder().decode(arr);
-    }
-
-    function atob_exceptional(ascii) {
-        try { return atob(ascii); }
-        catch (e) { throw new Base64DecodeError(); }
-    }
-
-    class Base64DecodeError extends Error {};
-
-    function u_atob(ascii) {
-        return Uint8Array.from(atob_exceptional(ascii), c => c.charCodeAt(0));
-    }
-
-    function u_btoa(buffer) {
-        var binary = [];
-        var bytes = new Uint8Array(buffer);
-        for (var i = 0, il = bytes.byteLength; i < il; i++) {
-            binary.push(String.fromCharCode(bytes[i]));
-        }
-        return btoa(binary.join(''));
-    }
-
-    function bufToHex(buffer) {
-        return new Uint8Array(buffer).reduce((a, b) => a + ('0' + b.toString(16)).slice(-2), '');
-    }
-
-    function getRandomHexString(length) {
-        const array = new Uint8Array(Math.ceil(length/2));
-        window.crypto.getRandomValues(array);
-        return bufToHex(array).slice(0, length);
-    }
-
-    async function willGenerateKeyPBKDF2(secret) {
-        if (!secret) {
-            // Firefox doesn't allow it, Chrome does. Let's make it consistent.
-            throw new GenerateKeyError('Cannot generate a key using an empty secret');
-        }
-
-        try {
-            return await crypto.subtle.importKey(
-                'raw',
-                stringToUint8Array(secret),
-                { name: 'PBKDF2' },
-                false, // whether the key can be extracted or not
-                [ 'deriveKey' ]
-            );
-        } catch (e) {
-            throw new GenerateKeyError(e.message || e.name);
-        }
-    }
-
-    class GenerateKeyError extends Error {};
-
-    async function willDeriveKey(baseKey, {saltString, iterations}) {
-        try {
-            return await crypto.subtle.deriveKey(
-                {
-                    name: 'PBKDF2',
-                    salt: stringToUint8Array(saltString),
-                    iterations: iterations,
-                    hash: 'SHA-256'
-                },
-                baseKey,
-                { "name": 'AES-GCM', "length": 256 },
-                false, // whether the key can be extracted or not
-                [ "encrypt", "decrypt" ]
-            );
-        }
-        catch (e) {
-            throw new DeriveKeyError(e.message || e.name);
-        }
-    }
-
-    class DeriveKeyError extends Error {};
-
-    /**
-     * Encrypt text using 256 AES in GCM mode, deriving the key with PBKDF2.
-     *
-     * @param string plaintext the text to encrypt
-     * @param string secret the secret to use to derive the key with PBKDF2
-     * @param array optionsPBKDF2
-     *              - string salt use it to prevent dictionary attacks
-     *              - number iterations the number of PBKDF2 iterations to derive the key
-     * @param arrayBuffer b_iv a nonce to use in AES-GCM
-     * @return Promise that will resolve to our encrypted box format.
-     *
-     * The encrypted box is formed by 3 base64 encoded parts (additional data,
-     * iv, ciphertext <concat> tag), separated by a dot.
-     *
-     * The additional data is a JSON object with the salt and iterations used
-     * to derive the key with PBKDF2.
-     *
-     * >>> willEncryptPlaintext(
-     * >>>     'the text to encrypt',
-     * >>>     'your strong secret',
-     * >>>     {
-     * >>>         salt: 'string to make your key unique even if your secret was more common than you thinked',
-     * >>>         iterations: 60000,
-     * >>>     },
-     * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
-     * >>> ).then(function (result) {
-     * >>>     console.log(result); // abc.def.ghi
-     * >>> });
-     */
-    async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
-        const baseKey = await willGenerateKeyPBKDF2(secret)
-        const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
-        const b_ad = stringToUint8Array(JSON.stringify(optionsPBKDF2));
-        const b_enc = await crypto.subtle.encrypt(
-            {
-                name: 'AES-GCM',
-                iv: b_iv,
-                additionalData: b_ad,
-            },
-            derivedKey,
-            stringToUint8Array(plaintext)
+    try {
+        return await crypto.subtle.importKey(
+            'raw',
+            stringToUint8Array(secret),
+            { name: 'PBKDF2' },
+            false, // whether the key can be extracted or not
+            [ 'deriveKey' ]
         );
-
-        return [
-            u_btoa(b_ad),
-            u_btoa(b_iv),
-            u_btoa(b_enc), // ciphertext | tag
-        ].join('.');
+    } catch (e) {
+        throw new GenerateKeyError(e.message || e.name);
     }
+}
 
-    function json_parse_exceptional(string) {
-        try { return JSON.parse(string); }
-        catch (e) { throw new JSONDecodeError(); }
-    }
+class GenerateKeyError extends Error {};
 
-    class JSONDecodeError extends Error {};
-
-    function crypto_subtle_decrypt_exceptional(algorithm, key, data) {
-        return crypto.subtle.decrypt(algorithm, key, data)
-        .catch(e => { throw new SubtleDecryptError; });
-    }
-
-    class SubtleDecryptError extends Error {};
-
-    /**
-     * Decrypt data using 256 AES in GCM mode, deriving the key with PBKDF2.
-     *
-     * @param string ciphertext the text to decrypt, as produced by willEncryptPlaintext
-     * @param string secret the secret to use to derive the key with PBKDF2
-     *
-     * @return Promise that will resolve to an object with format {plaintext,
-     * additionalData, iv}
-     *
-     */
-    async function willDecryptCiphertext(encryptedBox, secret) {
-        const [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
-        const [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
-        const additionalData = json_parse_exceptional(bufToString(b_ad));
-
-        const optionsPBKDF2 = {
-            salt: additionalData.salt || '',
-            iterations: additionalData.iterations || 1,
-        };
-
-        const baseKey = await willGenerateKeyPBKDF2(secret)
-        const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
-        const b_dec = await crypto_subtle_decrypt_exceptional(
+async function willDeriveKey(baseKey, {saltString, iterations}) {
+    try {
+        return await crypto.subtle.deriveKey(
             {
-                name: 'AES-GCM',
-                iv: b_iv,
-                additionalData: b_ad,
+                name: 'PBKDF2',
+                salt: stringToUint8Array(saltString),
+                iterations: iterations,
+                hash: 'SHA-256'
             },
-            derivedKey,
-            b_enc
+            baseKey,
+            { "name": 'AES-GCM', "length": 256 },
+            false, // whether the key can be extracted or not
+            [ "encrypt", "decrypt" ]
         );
+    }
+    catch (e) {
+        throw new DeriveKeyError(e.message || e.name);
+    }
+}
 
-        return {
-            plaintext: bufToString(b_dec),
-            additionalData,
+class DeriveKeyError extends Error {};
+
+/**
+ * Encrypt text using 256 AES in GCM mode, deriving the key with PBKDF2.
+ *
+ * @param string plaintext the text to encrypt
+ * @param string secret the secret to use to derive the key with PBKDF2
+ * @param array optionsPBKDF2
+ *              - string salt use it to prevent dictionary attacks
+ *              - number iterations the number of PBKDF2 iterations to derive the key
+ * @param arrayBuffer b_iv a nonce to use in AES-GCM
+ * @return Promise that will resolve to our encrypted box format.
+ *
+ * The encrypted box is formed by 3 base64 encoded parts (additional data,
+ * iv, ciphertext <concat> tag), separated by a dot.
+ *
+ * The additional data is a JSON object with the salt and iterations used
+ * to derive the key with PBKDF2.
+ *
+ * >>> willEncryptPlaintext(
+ * >>>     'the text to encrypt',
+ * >>>     'your strong secret',
+ * >>>     {
+ * >>>         salt: 'string to make your key unique even if your secret was more common than you thinked',
+ * >>>         iterations: 60000,
+ * >>>     },
+ * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
+ * >>> ).then(function (result) {
+ * >>>     console.log(result); // abc.def.ghi
+ * >>> });
+ */
+async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
+    const baseKey = await willGenerateKeyPBKDF2(secret)
+    const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
+    const b_ad = stringToUint8Array(JSON.stringify(optionsPBKDF2));
+    const b_enc = await crypto.subtle.encrypt(
+        {
+            name: 'AES-GCM',
             iv: b_iv,
-        };
-    }
+            additionalData: b_ad,
+        },
+        derivedKey,
+        stringToUint8Array(plaintext)
+    );
 
-    function willRequestEncryption(plaintext) {
-        if (!plaintext) return '';
-        const secret = getValueAt('secret');
-        const b_iv = window.crypto.getRandomValues(new Uint8Array(12));
-        const optionsPBKDF2 = {
-            salt: getPBKDF2Salt(),
-            iterations: getPBKDF2Iterations(),
-        };
+    return [
+        u_btoa(b_ad),
+        u_btoa(b_iv),
+        u_btoa(b_enc), // ciphertext | tag
+    ].join('.');
+}
 
-        return willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
-    }
+function json_parse_exceptional(string) {
+    try { return JSON.parse(string); }
+    catch (e) { throw new JSONDecodeError(); }
+}
 
-    function triggerDownloadDialog(blob, filename) {
-        const url = window.URL.createObjectURL(blob);
-        const anchor = $('download-dialog-anchor');
+class JSONDecodeError extends Error {};
 
-        anchor.href = url;
-        anchor.download = filename;
-        anchor.click();
-        window.URL.revokeObjectURL(url);
-    }
+function crypto_subtle_decrypt_exceptional(algorithm, key, data) {
+    return crypto.subtle.decrypt(algorithm, key, data)
+    .catch(e => { throw new SubtleDecryptError; });
+}
 
-    /**
-     * Return a string with the format YYYY-MM-DD_HHMMSS
-     */
-    function makeDateTimePrefix(date) {
-        const isoDateTime = date.toISOString();
-        const datePart = isoDateTime.split('T')[0];
-        const timePart = isoDateTime.split('T')[1].split('.')[0];
+class SubtleDecryptError extends Error {};
 
-        return datePart + '_' + timePart.replace(/:/g, '');
-    }
+/**
+ * Decrypt data using 256 AES in GCM mode, deriving the key with PBKDF2.
+ *
+ * @param string ciphertext the text to decrypt, as produced by willEncryptPlaintext
+ * @param string secret the secret to use to derive the key with PBKDF2
+ *
+ * @return Promise that will resolve to an object with format {plaintext,
+ * additionalData, iv}
+ *
+ */
+async function willDecryptCiphertext(encryptedBox, secret) {
+    const [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
+    const [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
+    const additionalData = json_parse_exceptional(bufToString(b_ad));
 
-    const $ = id => document.getElementById(id)
-    const setValueAt = (id, value) => $(id).value = value
-    const getValueAt = (id) => $(id).value
-
-    const getPBKDF2Salt = () => PBKDF2_SALT;
-    const getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
-
-    const pushErrorToDisplayQueue = (e) => {
-        const errorMessage = e.message || e.name || 'Unknown error';
-        if (errorMessage != ERRORS_QUEUE.slice(-1)[0]) {
-            ERRORS_QUEUE.push(errorMessage);
-        }
-        displayErrorBanner();
+    const optionsPBKDF2 = {
+        salt: additionalData.salt || '',
+        iterations: additionalData.iterations || 1,
     };
 
-    const discardLatestError = () => {
-        ERRORS_QUEUE.pop()
-        displayErrorBanner();
-    }
+    const baseKey = await willGenerateKeyPBKDF2(secret)
+    const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
+    const b_dec = await crypto_subtle_decrypt_exceptional(
+        {
+            name: 'AES-GCM',
+            iv: b_iv,
+            additionalData: b_ad,
+        },
+        derivedKey,
+        b_enc
+    );
 
-    const displayErrorBanner = () => {
-        const errorMessage = ERRORS_QUEUE.slice(-1)[0];
-        $('error-bar').classList.remove('bump');
-        $('error-bar').classList.add('no-bump');
-        setTimeout(() => {
-            $('error-bar').innerText = errorMessage || '';
-            $('error-bar').classList.remove('no-bump');
-            $('error-bar').classList.add('bump');
-        }, 10);
-    }
+    return {
+        plaintext: bufToString(b_dec),
+        additionalData,
+        iv: b_iv,
+    };
+}
 
-    const toggleOverlay = (isVisible) => {
-        $('overlay').classList.toggle('is-hidden', Boolean(!isVisible));
-    }
-
-    const ciphertextHasError = () => $('ciphertext').classList.contains('has-error');
-    const setCiphertextError = (errorMessage) => {
-        const hasError = Boolean(errorMessage.trim());
-        $('ciphertext').classList.toggle('has-error', hasError);
-        $('ciphertext-error-bar').innerText = errorMessage;
-    }
-
-    const encryptPlaintextAndSetCiphertext = async function() {
-        try {
-            const ciphertext = await willRequestEncryption(getValueAt('plaintext'));
-            setValueAt('ciphertext', ciphertext);
-            setCiphertextError('');
-        } catch (e) {
-            pushErrorToDisplayQueue(e);
-        }
+function willRequestEncryption(plaintext) {
+    if (!plaintext) return '';
+    const secret = getValueAt('secret');
+    const b_iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const optionsPBKDF2 = {
+        salt: getPBKDF2Salt(),
+        iterations: getPBKDF2Iterations(),
     };
 
-    getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
+    return willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+}
 
-    async function updatePlaintextFromCiphertext() {
+function triggerDownloadDialog(blob, filename) {
+    const url = window.URL.createObjectURL(blob);
+    const anchor = $('download-dialog-anchor');
+
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
+}
+
+/**
+ * Return a string with the format YYYY-MM-DD_HHMMSS
+ */
+function makeDateTimePrefix(date) {
+    const isoDateTime = date.toISOString();
+    const datePart = isoDateTime.split('T')[0];
+    const timePart = isoDateTime.split('T')[1].split('.')[0];
+
+    return datePart + '_' + timePart.replace(/:/g, '');
+}
+
+const $ = id => document.getElementById(id)
+const setValueAt = (id, value) => $(id).value = value
+const getValueAt = (id) => $(id).value
+
+const getPBKDF2Salt = () => PBKDF2_SALT;
+const getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
+
+const pushErrorToDisplayQueue = (e) => {
+    const errorMessage = e.message || e.name || 'Unknown error';
+    if (errorMessage != ERRORS_QUEUE.slice(-1)[0]) {
+        ERRORS_QUEUE.push(errorMessage);
+    }
+    displayErrorBanner();
+};
+
+const discardLatestError = () => {
+    ERRORS_QUEUE.pop()
+    displayErrorBanner();
+}
+
+const displayErrorBanner = () => {
+    const errorMessage = ERRORS_QUEUE.slice(-1)[0];
+    $('error-bar').classList.remove('bump');
+    $('error-bar').classList.add('no-bump');
+    setTimeout(() => {
+        $('error-bar').innerText = errorMessage || '';
+        $('error-bar').classList.remove('no-bump');
+        $('error-bar').classList.add('bump');
+    }, 10);
+}
+
+const toggleOverlay = (isVisible) => {
+    $('overlay').classList.toggle('is-hidden', Boolean(!isVisible));
+}
+
+const ciphertextHasError = () => $('ciphertext').classList.contains('has-error');
+const setCiphertextError = (errorMessage) => {
+    const hasError = Boolean(errorMessage.trim());
+    $('ciphertext').classList.toggle('has-error', hasError);
+    $('ciphertext-error-bar').innerText = errorMessage;
+}
+
+const encryptPlaintextAndSetCiphertext = async function() {
+    try {
+        const ciphertext = await willRequestEncryption(getValueAt('plaintext'));
+        setValueAt('ciphertext', ciphertext);
         setCiphertextError('');
-        try {
-            const secret = getValueAt('secret');
-            const ciphertext = getValueAt('ciphertext');
-            let plaintext = '';
-
-            if (ciphertext) {
-                const result = await willDecryptCiphertext(ciphertext, secret);
-                plaintext = result.plaintext;
-            }
-
-            setValueAt('plaintext', plaintext);
-        } catch (e) {
-            if (!(e instanceof JSONDecodeError
-                || e instanceof Base64DecodeError
-                || e instanceof SubtleDecryptError)) {
-                console.error(e);
-            }
-            setCiphertextError('Cannot decrypt, most likely the ciphertext is not correct: focus the cleartext to refresh the ciphertext');
-        };
+    } catch (e) {
+        pushErrorToDisplayQueue(e);
     }
+};
 
-    async function onDownloadCiphertextButtonClicked(ev) {
-        ev.preventDefault();
+getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
 
-        const encryptedBox = await willRequestEncryption(getValueAt('plaintext'));
-        const blob = new Blob([encryptedBox], {type: "plain/text"});
-        const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
+async function updatePlaintextFromCiphertext() {
+    setCiphertextError('');
+    try {
+        const secret = getValueAt('secret');
+        const ciphertext = getValueAt('ciphertext');
+        let plaintext = '';
 
-        triggerDownloadDialog(blob, filename);
-    }
-
-    function onDownloadCleartextButtonClicked(ev) {
-        ev.preventDefault();
-
-        const blob = new Blob([getValueAt('plaintext')], {type: "plain/text"});
-        const filename = makeDateTimePrefix(new Date()) + '_cleartext_vanillacrypto.txt';
-
-        triggerDownloadDialog(blob, filename);
-    }
-
-    async function onReloadCiphertextButtonClicked(ev) {
-        ev.preventDefault();
-        toggleOverlay(true);
-        try {
-            await reloadFile();
-            toggleOverlay(false);
-        } catch (e) {
-            pushErrorToDisplayQueue(e);
-            toggleOverlay(false);
-        }
-    }
-
-    async function _willGetAuthToken() {
-        try {
-            // user exists, we've got a challenge to decrypt
-            const challenge = (await willRequestChallenge()).content.challenge
-            return (await willAnswerChallenge(challenge)).content.token;
-        } catch (e) {
-            if (e instanceof UserDoesNotExistError) {
-                if (!window.confirm('No user found with that username, would you like to create it?')) {
-                    throw new Error('Cannot proceed');
-                }
-
-                return (await willCreateNewUser()).content.token;
-            } else if (e instanceof SubtleDecryptError) {
-                throw new Error('The password is not correct');
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    /**
-     * Retrieve an authorization token.
-     *
-     * The token is cached unless the option {refresh: true} is provided.
-     * Use fetchJSONWithRetryOnAuthExpired() to automatically refresh it.
-     */
-    const willGetAuthToken = (() => {
-        let token = null;
-
-        return async function(options) {
-            if (!token || (options || {}).refresh) {
-                token = await _willGetAuthToken();
-            }
-            return token;
-        }
-    })();
-
-    async function willRequestChallenge() {
-        const url = new URL(STORE_URL + '/auth/request-challenge');
-        url.searchParams.append('username', getValueAt('username'));
-
-        const parsedResponse = await fetchJSON(url.href);
-
-        if (parsedResponse.error) {
-            if (parsedResponse.error.code === 1005) {
-                throw new UserDoesNotExistError();
-            }
-            throw new CannotRequestChallengeError(parsedResponse.error);
+        if (ciphertext) {
+            const result = await willDecryptCiphertext(ciphertext, secret);
+            plaintext = result.plaintext;
         }
 
-        return parsedResponse;
-    }
-
-    class UserDoesNotExistError extends Error {}
-
-    async function willAnswerChallenge(challenge) {
-        const answerBox = await willDecryptCiphertext(challenge, getValueAt('secret'));
-        const answer = answerBox.plaintext;
-
-        const url = new URL(STORE_URL + '/auth/answer-challenge');
-        const parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
-            method: 'POST',
-            body: JSON.stringify({
-                username: getValueAt('username'),
-                answer,
-            }),
-        });
-
-        if (parsedResponse.error) {
-            throw new CannotAnswerChallengeError(parsedResponse.error);
+        setValueAt('plaintext', plaintext);
+    } catch (e) {
+        if (!(e instanceof JSONDecodeError
+            || e instanceof Base64DecodeError
+            || e instanceof SubtleDecryptError)) {
+            console.error(e);
         }
+        setCiphertextError('Cannot decrypt, most likely the ciphertext is not correct: focus the cleartext to refresh the ciphertext');
+    };
+}
 
-        return parsedResponse;
-    }
+async function onDownloadCiphertextButtonClicked(ev) {
+    ev.preventDefault();
 
-    async function willCreateNewUser() {
-        const h_answer = getRandomHexString(32);
-        const url = new URL(STORE_URL + '/users/');
-        const parsedResponse = await fetchJSON(url.href, {
-            method: 'POST',
-            body: JSON.stringify({
-                username: getValueAt('username'),
-                challenge: await willRequestEncryption(h_answer),
-                answer: h_answer,
-            }),
-        });
+    const encryptedBox = await willRequestEncryption(getValueAt('plaintext'));
+    const blob = new Blob([encryptedBox], {type: "plain/text"});
+    const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
 
-        if (parsedResponse.error) {
-            throw new CannotCreateNewUserError(parsedResponse.error);
-        }
+    triggerDownloadDialog(blob, filename);
+}
 
-        return parsedResponse;
-    }
+function onDownloadCleartextButtonClicked(ev) {
+    ev.preventDefault();
 
-    class CannotCreateNewUserError extends Error {
-        constructor(jsonError) {
-            super();
-            this.message = 'Couldn\'t create the user. Server response was: ' +
-            '[' + jsonError.code + '] ' + jsonError.message;
-        }
-    }
+    const blob = new Blob([getValueAt('plaintext')], {type: "plain/text"});
+    const filename = makeDateTimePrefix(new Date()) + '_cleartext_vanillacrypto.txt';
 
-    class CannotRequestChallengeError extends Error {
-        constructor(jsonError) {
-            super();
-            this.message = 'Couldn\'t start authentication. Server response was: ' +
-            '[' + jsonError.code + '] ' + jsonError.message;
-        }
-    }
+    triggerDownloadDialog(blob, filename);
+}
 
-    class CannotAnswerChallengeError extends Error {
-        constructor(jsonError) {
-            super();
-            this.message = 'Couldn\'t authenticate. Server response was: ' +
-            '[' + jsonError.code + '] ' + jsonError.message;
-        }
-    }
-
-    const getFilenameOrDefault = (() => {
-        let _filename = null;
-        return ((defaultFilename) => {
-            if (!_filename) {
-                _filename = defaultFilename || getRandomHexString(32);
-            }
-            return _filename;
-        });
-    })();
-
-    async function onUploadCiphertextButtonClicked(ev) {
-        ev.preventDefault();
-
-        // XXX this is ok as long as we support just a single file
-        const filename = getFilenameOrDefault();
-
-        toggleOverlay(true);
-
-        try {
-            const ciphertext = await willRequestEncryption(getValueAt('plaintext')); // XXX this way we upload something different from what the user sees !!!!
-            const uploadUrl = await willRequestUploadUrl(filename);
-            if (uploadUrl.slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
-                throw new Error('The server proposed to upload the file to an untrusted url!');
-            }
-            await willUploadCiphertext(uploadUrl, ciphertext);
-
-            const objectUrl = uploadUrl.replace(/\?.*$/, '');
-            const uploadedContent = await willDownload(objectUrl);
-            if (uploadedContent !== ciphertext) {
-                throw new Error('The uploaded file does not match the original file');
-            }
-            console.log('Cool, the file was uploaded correctly!');
-        } catch (e) {
-            if (e instanceof UploadCiphertextError
-                || e instanceof CannotRequestUploadUrlError) {
-                pushErrorToDisplayQueue(e);
-            } else {
-                console.error('Error uploading the ciphertext', e);
-                pushErrorToDisplayQueue(new Error('Error uploading the ciphertext'));
-            }
-        }
-
+async function onReloadCiphertextButtonClicked(ev) {
+    ev.preventDefault();
+    toggleOverlay(true);
+    try {
+        await reloadFile();
         toggleOverlay(false);
+    } catch (e) {
+        pushErrorToDisplayQueue(e);
+        toggleOverlay(false);
+    }
+}
+
+async function _willGetAuthToken() {
+    try {
+        // user exists, we've got a challenge to decrypt
+        const challenge = (await willRequestChallenge()).content.challenge
+        return (await willAnswerChallenge(challenge)).content.token;
+    } catch (e) {
+        if (e instanceof UserDoesNotExistError) {
+            if (!window.confirm('No user found with that username, would you like to create it?')) {
+                throw new Error('Cannot proceed');
+            }
+
+            return (await willCreateNewUser()).content.token;
+        } else if (e instanceof SubtleDecryptError) {
+            throw new Error('The password is not correct');
+        } else {
+            throw e;
+        }
+    }
+}
+
+/**
+ * Retrieve an authorization token.
+ *
+ * The token is cached unless the option {refresh: true} is provided.
+ * Use fetchJSONWithRetryOnAuthExpired() to automatically refresh it.
+ */
+const willGetAuthToken = (() => {
+    let token = null;
+
+    return async function(options) {
+        if (!token || (options || {}).refresh) {
+            token = await _willGetAuthToken();
+        }
+        return token;
+    }
+})();
+
+async function willRequestChallenge() {
+    const url = new URL(STORE_URL + '/auth/request-challenge');
+    url.searchParams.append('username', getValueAt('username'));
+
+    const parsedResponse = await fetchJSON(url.href);
+
+    if (parsedResponse.error) {
+        if (parsedResponse.error.code === 1005) {
+            throw new UserDoesNotExistError();
+        }
+        throw new CannotRequestChallengeError(parsedResponse.error);
+    }
+
+    return parsedResponse;
+}
+
+class UserDoesNotExistError extends Error {}
+
+async function willAnswerChallenge(challenge) {
+    const answerBox = await willDecryptCiphertext(challenge, getValueAt('secret'));
+    const answer = answerBox.plaintext;
+
+    const url = new URL(STORE_URL + '/auth/answer-challenge');
+    const parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
+        method: 'POST',
+        body: JSON.stringify({
+            username: getValueAt('username'),
+            answer,
+        }),
+    });
+
+    if (parsedResponse.error) {
+        throw new CannotAnswerChallengeError(parsedResponse.error);
+    }
+
+    return parsedResponse;
+}
+
+async function willCreateNewUser() {
+    const h_answer = getRandomHexString(32);
+    const url = new URL(STORE_URL + '/users/');
+    const parsedResponse = await fetchJSON(url.href, {
+        method: 'POST',
+        body: JSON.stringify({
+            username: getValueAt('username'),
+            challenge: await willRequestEncryption(h_answer),
+            answer: h_answer,
+        }),
+    });
+
+    if (parsedResponse.error) {
+        throw new CannotCreateNewUserError(parsedResponse.error);
+    }
+
+    return parsedResponse;
+}
+
+class CannotCreateNewUserError extends Error {
+    constructor(jsonError) {
+        super();
+        this.message = 'Couldn\'t create the user. Server response was: ' +
+        '[' + jsonError.code + '] ' + jsonError.message;
+    }
+}
+
+class CannotRequestChallengeError extends Error {
+    constructor(jsonError) {
+        super();
+        this.message = 'Couldn\'t start authentication. Server response was: ' +
+        '[' + jsonError.code + '] ' + jsonError.message;
+    }
+}
+
+class CannotAnswerChallengeError extends Error {
+    constructor(jsonError) {
+        super();
+        this.message = 'Couldn\'t authenticate. Server response was: ' +
+        '[' + jsonError.code + '] ' + jsonError.message;
+    }
+}
+
+const getFilenameOrDefault = (() => {
+    let _filename = null;
+    return ((defaultFilename) => {
+        if (!_filename) {
+            _filename = defaultFilename || getRandomHexString(32);
+        }
+        return _filename;
+    });
+})();
+
+async function onUploadCiphertextButtonClicked(ev) {
+    ev.preventDefault();
+
+    // XXX this is ok as long as we support just a single file
+    const filename = getFilenameOrDefault();
+
+    toggleOverlay(true);
+
+    try {
+        const ciphertext = await willRequestEncryption(getValueAt('plaintext')); // XXX this way we upload something different from what the user sees !!!!
+        const uploadUrl = await willRequestUploadUrl(filename);
+        if (uploadUrl.slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
+            throw new Error('The server proposed to upload the file to an untrusted url!');
+        }
+        await willUploadCiphertext(uploadUrl, ciphertext);
+
+        const objectUrl = uploadUrl.replace(/\?.*$/, '');
+        const uploadedContent = await willDownload(objectUrl);
+        if (uploadedContent !== ciphertext) {
+            throw new Error('The uploaded file does not match the original file');
+        }
+        console.log('Cool, the file was uploaded correctly!');
+    } catch (e) {
+        if (e instanceof UploadCiphertextError
+            || e instanceof CannotRequestUploadUrlError) {
+            pushErrorToDisplayQueue(e);
+        } else {
+            console.error('Error uploading the ciphertext', e);
+            pushErrorToDisplayQueue(new Error('Error uploading the ciphertext'));
+        }
+    }
+
+    toggleOverlay(false);
+};
+
+async function reloadFile() {
+    try {
+        const files = await willGetFilesList();
+        let ciphertext = '';
+        if (files.length > 0) {
+            getFilenameOrDefault(files[0].content.filename);
+            ciphertext = await willDownload(files[0].links.read.href);
+        }
+        setValueAt('ciphertext', ciphertext);
+        updatePlaintextFromCiphertext();
+    } catch (e) {
+        if (e instanceof CannotRetrieveFilesListError) {
+            throw e;
+        } else if (e instanceof DownloadError) {
+            throw e;
+        } else {
+            console.error(e);
+            throw new Error('An error occurred while reloading the ciphertext');
+        }
+    }
+}
+
+async function willRequestUploadUrl(filename) {
+    const href = STORE_URL + '/files/request-upload-url';
+    const token = await willGetAuthToken();
+    const parsedResponse = await fetchJSONWithRetryOnAuthExpired(href, {
+        method: 'POST',
+        body: JSON.stringify({
+            filename: filename,
+        }),
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    })
+
+    if (parsedResponse.error) {
+        throw new CannotRequestUploadUrlError(parsedResponse.error);
+    }
+
+    return parsedResponse.links.upload_url.href;
+}
+
+class CannotRequestUploadUrlError extends Error {
+    constructor(jsonError) {
+        super();
+        this.message = 'Cannot get the url to upload to. Server response was: ' +
+        '[' + jsonError.code + '] ' + jsonError.message;
+    }
+}
+
+async function willUploadCiphertext(uploadUrl, ciphertext) {
+    try {
+        const href = uploadUrl;
+        const response = await fetchOrThrow(href, {
+            headers: {
+                'Cache-Control': 'None',
+                'Expect': '100-continue',
+                'Content-Encoding': 'utf-8',
+                'Content-Type': 'text/plain',
+                // XXX ... no md5 in crypto subtle, so we can't rely on it.
+                // We'll have to download the file and verify his content later
+                // 'Content-MD5': 'application/json',
+            },
+            method: 'PUT',
+            body: ciphertext,
+        });
+
+        if (!response.ok) {
+            throw new UploadCiphertextError('Couldn\'t upload the ciphertext, response status was: ' + statusText);
+        }
+
+        return response;
+    } catch (e) {
+        if (e instanceof FetchUnexpectedError
+            || e instanceof FetchRequestTimedOutError) {
+            throw new UploadCiphertextError(e.message);
+        } else {
+            throw e;
+        }
+    }
+}
+
+class UploadCiphertextError extends Error {};
+
+async function willDownload(href) {
+    const response = await fetchOrThrow(href, {
+        mode: 'cors',
+        cache: 'no-store',
+        referrerPolicy: 'no-referrer',
+    });
+
+    if (response.ok) {
+        return response.text();
+    } else {
+        throw new DownloadError(response.statusText);
+    }
+}
+
+class DownloadError extends Error {
+    constructor(statusText) {
+        super();
+        this.message = 'Couldn\'t download the file. Server response was: ' + statusText;
+    }
+}
+
+async function willGetFilesList() {
+    const href = STORE_URL + '/files/';
+    const token = await willGetAuthToken();
+    const jsonResponse = await fetchJSONWithRetryOnAuthExpired(href, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    if (jsonResponse.error) { throw new CannotRetrieveFilesListError(jsonResponse.error); }
+    return jsonResponse.content;
+}
+
+async function fetchJSONWithRetryOnAuthExpired(href, options) {
+    let response = await fetchJSON(href, options);
+    if (response.error && response.error.code === 1007) {
+        // 1007 means "token expired"
+        await willGetAuthToken({refresh: true});
+        response = await fetchJSON(href, options);
+    }
+    return response;
+}
+
+class FetchUnexpectedError extends Error {
+    constructor(orig) {
+        super();
+        this.message = "Cannot fetch an external resource: check your internet connection or configuration";
+        this.details = orig;
+    }
+}
+class FetchRequestTimedOutError extends Error {
+    constructor() {
+        super();
+        this.message = "The request is taking too long to complete";
+    }
+}
+class FetchUnexpectedFormat extends Error {
+    constructor(statusText) {
+        super();
+        this.message = statusText;
+    }
+}
+
+class CannotRetrieveFilesListError extends Error {
+    constructor(jsonError) {
+        super();
+        this.message = 'Cannot retrieve the files\' list. Server response was: ' +
+        '[' + jsonError.code + '] ' + jsonError.message;
+    }
+}
+
+async function fetchOrThrow(href, options) {
+    const request = fetch(href, options)
+    .catch (e => { throw new FetchUnexpectedError(e); });
+    const timeout = new Promise((resolve, reject) => {
+        // XXX we should abort the request on timeout
+        setTimeout(() => reject(new FetchRequestTimedOutError()), 15000);
+    });
+    return Promise.race([timeout, request]);
+}
+
+async function fetchJSON(href, options = {}) {
+    options = {
+        mode: 'cors',
+        cache: 'no-store',
+        referrerPolicy: 'no-referrer',
+        ...options,
+        headers: {
+            ...options.headers,
+            'Content-Type': 'application/json',
+        },
     };
 
-    async function reloadFile() {
+    const response = await fetchOrThrow(href, options);
+
+    if (response.headers.get('Content-Type') === 'application/json') {
+        return response.json();
+    } else {
+        throw new FetchUnexpectedFormat(response.statusText);
+    }
+}
+
+async function attemptLogin() {
+    if (getValueAt('confirm-secret') !== getValueAt('secret')) {
+        window.alert('The passwords don\'t match');
+    } else {
+        toggleOverlay(true);
         try {
-            const files = await willGetFilesList();
-            let ciphertext = '';
-            if (files.length > 0) {
-                getFilenameOrDefault(files[0].content.filename);
-                ciphertext = await willDownload(files[0].links.read.href);
-            }
-            setValueAt('ciphertext', ciphertext);
-            updatePlaintextFromCiphertext();
-        } catch (e) {
-            if (e instanceof CannotRetrieveFilesListError) {
-                throw e;
-            } else if (e instanceof DownloadError) {
-                throw e;
+            if (getValueAt('username')) {
+                // auth, possibly ask to create the user
+                const token = await willGetAuthToken();
+                await reloadFile();
             } else {
-                console.error(e);
-                throw new Error('An error occurred while reloading the ciphertext');
+                document.body.classList.remove('enable-external-actions');
             }
-        }
-    }
-
-    async function willRequestUploadUrl(filename) {
-        const href = STORE_URL + '/files/request-upload-url';
-        const token = await willGetAuthToken();
-        const parsedResponse = await fetchJSONWithRetryOnAuthExpired(href, {
-            method: 'POST',
-            body: JSON.stringify({
-                filename: filename,
-            }),
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (parsedResponse.error) {
-            throw new CannotRequestUploadUrlError(parsedResponse.error);
-        }
-
-        return parsedResponse.links.upload_url.href;
-    }
-
-    class CannotRequestUploadUrlError extends Error {
-        constructor(jsonError) {
-            super();
-            this.message = 'Cannot get the url to upload to. Server response was: ' +
-            '[' + jsonError.code + '] ' + jsonError.message;
-        }
-    }
-
-    async function willUploadCiphertext(uploadUrl, ciphertext) {
-        try {
-            const href = uploadUrl;
-            const response = await fetchOrThrow(href, {
-                headers: {
-                    'Cache-Control': 'None',
-                    'Expect': '100-continue',
-                    'Content-Encoding': 'utf-8',
-                    'Content-Type': 'text/plain',
-                    // XXX ... no md5 in crypto subtle, so we can't rely on it.
-                    // We'll have to download the file and verify his content later
-                    // 'Content-MD5': 'application/json',
-                },
-                method: 'PUT',
-                body: ciphertext,
-            });
-
-            if (!response.ok) {
-                throw new UploadCiphertextError('Couldn\'t upload the ciphertext, response status was: ' + statusText);
-            }
-
-            return response;
+            document.body.classList.remove('require-login');
         } catch (e) {
-            if (e instanceof FetchUnexpectedError
-                || e instanceof FetchRequestTimedOutError) {
-                throw new UploadCiphertextError(e.message);
-            } else {
-                throw e;
-            }
+            pushErrorToDisplayQueue(e);
         }
+        toggleOverlay(false);
+    }
+}
+
+function poorDebounce(func, wait) {
+    let timeoutId = null;
+    return function() {
+        const args = arguments;
+        if (timeoutId) {
+            clearInterval(timeoutId);
+            timeoutId = null;
+        }
+        timeoutId = setTimeout(() => func.apply(null, args), wait || 50);
+    };
+}
+
+function onPageLoaded() {
+    $('error-bar').addEventListener('click', (ev) => discardLatestError());
+    // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
+    // change the ciphertext without reason
+    $('plaintext').addEventListener('focus', ev => {
+        if (ciphertextHasError()) { encryptPlaintextAndSetCipherText(); }
+    });
+    // redo encryption if any of the fields used to encrypt has changed
+    getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
+        elem.addEventListener('input', poorDebounce(ev => encryptPlaintextAndSetCiphertext()));
+    });
+    // redo decryption if the ciphertext has changed (or may have changed)
+    ['input', 'focus'].forEach(eventType => {
+        $('ciphertext').addEventListener(eventType, poorDebounce(ev => updatePlaintextFromCiphertext()))
+    });
+
+    $('download-ciphertext').addEventListener('click', onDownloadCiphertextButtonClicked);
+    $('download-cleartext').addEventListener('click', onDownloadCleartextButtonClicked);
+    $('reload-ciphertext').addEventListener('click', onReloadCiphertextButtonClicked);
+    $('upload-ciphertext').addEventListener('click', onUploadCiphertextButtonClicked);
+
+    if (!getPBKDF2Salt()) {
+        $('salt-is-missing').style.display = 'block';
     }
 
-    class UploadCiphertextError extends Error {};
+    [$('secret'), $('confirm-secret')].forEach((elem) => {
+        const loginBtn = $('login-btn');
 
-    async function willDownload(href) {
-        const response = await fetchOrThrow(href, {
-            mode: 'cors',
-            cache: 'no-store',
-            referrerPolicy: 'no-referrer',
+        elem.addEventListener('input', () => {
+            loginBtn.disabled = getValueAt('confirm-secret') !== getValueAt('secret');
         });
+    });
 
-        if (response.ok) {
-            return response.text();
-        } else {
-            throw new DownloadError(response.statusText);
-        }
-    }
-
-    class DownloadError extends Error {
-        constructor(statusText) {
-            super();
-            this.message = 'Couldn\'t download the file. Server response was: ' + statusText;
-        }
-    }
-
-    async function willGetFilesList() {
-        const href = STORE_URL + '/files/';
-        const token = await willGetAuthToken();
-        const jsonResponse = await fetchJSONWithRetryOnAuthExpired(href, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        if (jsonResponse.error) { throw new CannotRetrieveFilesListError(jsonResponse.error); }
-        return jsonResponse.content;
-    }
-
-    async function fetchJSONWithRetryOnAuthExpired(href, options) {
-        let response = await fetchJSON(href, options);
-        if (response.error && response.error.code === 1007) {
-            // 1007 means "token expired"
-            await willGetAuthToken({refresh: true});
-            response = await fetchJSON(href, options);
-        }
-        return response;
-    }
-
-    class FetchUnexpectedError extends Error {
-        constructor(orig) {
-            super();
-            this.message = "Cannot fetch an external resource: check your internet connection or configuration";
-            this.details = orig;
-        }
-    }
-    class FetchRequestTimedOutError extends Error {
-        constructor() {
-            super();
-            this.message = "The request is taking too long to complete";
-        }
-    }
-    class FetchUnexpectedFormat extends Error {
-        constructor(statusText) {
-            super();
-            this.message = statusText;
-        }
-    }
-
-    class CannotRetrieveFilesListError extends Error {
-        constructor(jsonError) {
-            super();
-            this.message = 'Cannot retrieve the files\' list. Server response was: ' +
-            '[' + jsonError.code + '] ' + jsonError.message;
-        }
-    }
-
-    async function fetchOrThrow(href, options) {
-        const request = fetch(href, options)
-        .catch (e => { throw new FetchUnexpectedError(e); });
-        const timeout = new Promise((resolve, reject) => {
-            // XXX we should abort the request on timeout
-            setTimeout(() => reject(new FetchRequestTimedOutError()), 15000);
-        });
-        return Promise.race([timeout, request]);
-    }
-
-    async function fetchJSON(href, options = {}) {
-        options = {
-            mode: 'cors',
-            cache: 'no-store',
-            referrerPolicy: 'no-referrer',
-            ...options,
-            headers: {
-                ...options.headers,
-                'Content-Type': 'application/json',
-            },
-        };
-
-        const response = await fetchOrThrow(href, options);
-
-        if (response.headers.get('Content-Type') === 'application/json') {
-            return response.json();
-        } else {
-            throw new FetchUnexpectedFormat(response.statusText);
-        }
-    }
-
-    async function attemptLogin() {
-        if (getValueAt('confirm-secret') !== getValueAt('secret')) {
-            window.alert('The passwords don\'t match');
-        } else {
-            toggleOverlay(true);
-            try {
-                if (getValueAt('username')) {
-                    // auth, possibly ask to create the user
-                    const token = await willGetAuthToken();
-                    await reloadFile();
-                } else {
-                    document.body.classList.remove('enable-external-actions');
-                }
-                document.body.classList.remove('require-login');
-            } catch (e) {
-                pushErrorToDisplayQueue(e);
-            }
-            toggleOverlay(false);
-        }
-    }
-
-    function poorDebounce(func, wait) {
-        let timeoutId = null;
-        return function() {
-            const args = arguments;
-            if (timeoutId) {
-                clearInterval(timeoutId);
-                timeoutId = null;
-            }
-            timeoutId = setTimeout(() => func.apply(null, args), wait || 50);
-        };
-    }
-
-    function onPageLoaded() {
-
-        $('error-bar').addEventListener('click', (ev) => discardLatestError());
-        // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
-        // change the ciphertext without reason
-        $('plaintext').addEventListener('focus', ev => {
-            if (ciphertextHasError()) { encryptPlaintextAndSetCipherText(); }
-        });
-        // redo encryption if any of the fields used to encrypt has changed
-        getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
-            elem.addEventListener('input', poorDebounce(ev => encryptPlaintextAndSetCiphertext()));
-        });
-        // redo decryption if the ciphertext has changed (or may have changed)
-        ['input', 'focus'].forEach(eventType => {
-            $('ciphertext').addEventListener(eventType, poorDebounce(ev => updatePlaintextFromCiphertext()))
-        });
-
-        $('download-ciphertext').addEventListener('click', onDownloadCiphertextButtonClicked);
-        $('download-cleartext').addEventListener('click', onDownloadCleartextButtonClicked);
-        $('reload-ciphertext').addEventListener('click', onReloadCiphertextButtonClicked);
-        $('upload-ciphertext').addEventListener('click', onUploadCiphertextButtonClicked);
-
-        if (!getPBKDF2Salt()) {
-            $('salt-is-missing').style.display = 'block';
-        }
-
-        [$('secret'), $('confirm-secret')].forEach((elem) => {
-            const loginBtn = $('login-btn');
-
-            elem.addEventListener('input', () => {
-                loginBtn.disabled = getValueAt('confirm-secret') !== getValueAt('secret');
-            });
-        });
-
-        $('login-form').addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
-        document.querySelectorAll('#login-form .login-text').forEach(elem => {
-            elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
-        });
-        $('logout-btn').addEventListener('click', () => {
-            document.location.reload();
-        });
-    }
-
+    $('login-form').addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
+    document.querySelectorAll('#login-form .login-text').forEach(elem => {
+        elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
+    });
+    $('logout-btn').addEventListener('click', () => {
+        document.location.reload();
+    });
+}
 
 </script>
 </body>
