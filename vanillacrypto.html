@@ -573,7 +573,7 @@ button.action {
 
     function willRequestEncryption(plaintext) {
         if (!plaintext) return '';
-        const secret = getSecret();
+        const secret = getValueAt('secret');
         const b_iv = window.crypto.getRandomValues(new Uint8Array(12));
         const optionsPBKDF2 = {
             salt: getPBKDF2Salt(),
@@ -585,7 +585,7 @@ button.action {
 
     function triggerDownloadDialog(blob, filename) {
         const url = window.URL.createObjectURL(blob);
-        const anchor = getDownloadDialogAnchorDOMElement();
+        const anchor = $('download-dialog-anchor');
 
         anchor.href = url;
         anchor.download = filename;
@@ -604,43 +604,12 @@ button.action {
         return datePart + '_' + timePart.replace(/:/g, '');
     }
 
-    const getPlaintextDOMElement = () => document.getElementById('plaintext');
-    const getPlaintext = () => getPlaintextDOMElement().value;
-    const setPlaintext = value => getPlaintextDOMElement().value = value;
-
-    const getCiphertextDOMElement = () => document.getElementById('ciphertext');
-    const getCiphertext = () => getCiphertextDOMElement().value;
-    const setCiphertext = value => getCiphertextDOMElement().value = value;
-
-    const getSecretDOMElement = () => document.getElementById('secret');
-    const getSecret = () => getSecretDOMElement().value;
+    const $ = id => document.getElementById(id)
+    const setValueAt = (id, value) => $(id).value = value
+    const getValueAt = (id) => $(id).value
 
     const getPBKDF2Salt = () => PBKDF2_SALT;
     const getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
-
-    const getDownloadCleartextButtonDOMElement = () => document.getElementById('download-cleartext');
-    const getDownloadCiphertextButtonDOMElement = () => document.getElementById('download-ciphertext');
-    const getDownloadDialogAnchorDOMElement = () => document.getElementById('download-dialog-anchor');
-
-    const getUploadCiphertextButtonDOMElement = () => document.getElementById('upload-ciphertext');
-    const getReloadCiphertextButtonDOMElement = () => document.getElementById('reload-ciphertext');
-
-    const getLoginFormDOMElement = () => document.getElementById('login-form');
-    const getLoginButtonDOMElement = () => document.getElementById('login-btn');
-    const getLogoutButtonDOMElement = () => document.getElementById('logout-btn');
-    const getMainContainerDOMElement = () => document.getElementById('main-container');
-
-    const getSaltIsMissingDOMElement = () => document.getElementById('salt-is-missing');
-
-    const getUsernameDOMElement = () => document.getElementById('username');
-    const getUsername = () => getUsernameDOMElement().value;
-    const getConfirmSecretDOMElement = () => document.getElementById('confirm-secret');
-    const getConfirmSecret = () => getConfirmSecretDOMElement().value;
-
-    const getOVerlayDOMElement = () => document.getElementById('overlay');
-
-    const getErrorBarDOMElement = () => document.getElementById('error-bar');
-    const getCiphertextErrorBarDOMElement = () => document.getElementById('ciphertext-error-bar');
 
     const pushErrorToDisplayQueue = (e) => {
         const errorMessage = e.message || e.name || 'Unknown error';
@@ -657,30 +626,30 @@ button.action {
 
     const displayErrorBanner = () => {
         const errorMessage = ERRORS_QUEUE.slice(-1)[0];
-        getErrorBarDOMElement().classList.remove('bump');
-        getErrorBarDOMElement().classList.add('no-bump');
+        $('error-bar').classList.remove('bump');
+        $('error-bar').classList.add('no-bump');
         setTimeout(() => {
-            getErrorBarDOMElement().innerText = errorMessage || '';
-            getErrorBarDOMElement().classList.remove('no-bump');
-            getErrorBarDOMElement().classList.add('bump');
+            $('error-bar').innerText = errorMessage || '';
+            $('error-bar').classList.remove('no-bump');
+            $('error-bar').classList.add('bump');
         }, 10);
     }
 
     const toggleOverlay = (isVisible) => {
-        getOVerlayDOMElement().classList.toggle('is-hidden', Boolean(!isVisible));
+        $('overlay').classList.toggle('is-hidden', Boolean(!isVisible));
     }
 
-    const ciphertextHasError = () => getCiphertextDOMElement().classList.contains('has-error');
+    const ciphertextHasError = () => $('ciphertext').classList.contains('has-error');
     const setCiphertextError = (errorMessage) => {
         const hasError = Boolean(errorMessage.trim());
-        getCiphertextDOMElement().classList.toggle('has-error', hasError);
-        getCiphertextErrorBarDOMElement().innerText = errorMessage;
+        $('ciphertext').classList.toggle('has-error', hasError);
+        $('ciphertext-error-bar').innerText = errorMessage;
     }
 
     const encryptPlaintextAndSetCiphertext = async function() {
         try {
-            const ciphertext = await willRequestEncryption(getPlaintext());
-            setCiphertext(ciphertext);
+            const ciphertext = await willRequestEncryption(getValueAt('plaintext'));
+            setValueAt('ciphertext', ciphertext);
             setCiphertextError('');
         } catch (e) {
             pushErrorToDisplayQueue(e);
@@ -692,8 +661,8 @@ button.action {
     async function updatePlaintextFromCiphertext() {
         setCiphertextError('');
         try {
-            const secret = getSecret();
-            const ciphertext = getCiphertext();
+            const secret = getValueAt('secret');
+            const ciphertext = getValueAt('ciphertext');
             let plaintext = '';
 
             if (ciphertext) {
@@ -701,7 +670,7 @@ button.action {
                 plaintext = result.plaintext;
             }
 
-            setPlaintext(plaintext);
+            setValueAt('plaintext', plaintext);
         } catch (e) {
             if (!(e instanceof JSONDecodeError
                 || e instanceof Base64DecodeError
@@ -715,7 +684,7 @@ button.action {
     async function onDownloadCiphertextButtonClicked(ev) {
         ev.preventDefault();
 
-        const encryptedBox = await willRequestEncryption(getPlaintext());
+        const encryptedBox = await willRequestEncryption(getValueAt('plaintext'));
         const blob = new Blob([encryptedBox], {type: "plain/text"});
         const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
 
@@ -725,7 +694,7 @@ button.action {
     function onDownloadCleartextButtonClicked(ev) {
         ev.preventDefault();
 
-        const blob = new Blob([getPlaintext()], {type: "plain/text"});
+        const blob = new Blob([getValueAt('plaintext')], {type: "plain/text"});
         const filename = makeDateTimePrefix(new Date()) + '_cleartext_vanillacrypto.txt';
 
         triggerDownloadDialog(blob, filename);
@@ -782,7 +751,7 @@ button.action {
 
     async function willRequestChallenge() {
         const url = new URL(STORE_URL + '/auth/request-challenge');
-        url.searchParams.append('username', getUsername());
+        url.searchParams.append('username', getValueAt('username'));
 
         const parsedResponse = await fetchJSON(url.href);
 
@@ -799,14 +768,14 @@ button.action {
     class UserDoesNotExistError extends Error {}
 
     async function willAnswerChallenge(challenge) {
-        const answerBox = await willDecryptCiphertext(challenge, getSecret());
+        const answerBox = await willDecryptCiphertext(challenge, getValueAt('secret'));
         const answer = answerBox.plaintext;
 
         const url = new URL(STORE_URL + '/auth/answer-challenge');
         const parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
             method: 'POST',
             body: JSON.stringify({
-                username: getUsername(),
+                username: getValueAt('username'),
                 answer,
             }),
         });
@@ -824,7 +793,7 @@ button.action {
         const parsedResponse = await fetchJSON(url.href, {
             method: 'POST',
             body: JSON.stringify({
-                username: getUsername(),
+                username: getValueAt('username'),
                 challenge: await willRequestEncryption(h_answer),
                 answer: h_answer,
             }),
@@ -880,7 +849,7 @@ button.action {
         toggleOverlay(true);
 
         try {
-            const ciphertext = await willRequestEncryption(getPlaintext()); // XXX this way we upload something different from what the user sees !!!!
+            const ciphertext = await willRequestEncryption(getValueAt('plaintext')); // XXX this way we upload something different from what the user sees !!!!
             const uploadUrl = await willRequestUploadUrl(filename);
             if (uploadUrl.slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
                 throw new Error('The server proposed to upload the file to an untrusted url!');
@@ -914,7 +883,7 @@ button.action {
                 getFilenameOrDefault(files[0].content.filename);
                 ciphertext = await willDownload(files[0].links.read.href);
             }
-            setCiphertext(ciphertext);
+            setValueAt('ciphertext', ciphertext);
             updatePlaintextFromCiphertext();
         } catch (e) {
             if (e instanceof CannotRetrieveFilesListError) {
@@ -1093,12 +1062,12 @@ button.action {
     }
 
     async function attemptLogin() {
-        if (getConfirmSecret() !== getSecret()) {
+        if (getValueAt('confirm-secret') !== getValueAt('secret')) {
             window.alert('The passwords don\'t match');
         } else {
             toggleOverlay(true);
             try {
-                if (getUsername()) {
+                if (getValueAt('username')) {
                     // auth, possibly ask to create the user
                     const token = await willGetAuthToken();
                     await reloadFile();
@@ -1127,11 +1096,11 @@ button.action {
 
     function onPageLoaded() {
 
-        getErrorBarDOMElement().addEventListener('click', (ev) => discardLatestError());
+        $('error-bar').addEventListener('click', (ev) => discardLatestError());
         // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
         // change the ciphertext without reason
-        getPlaintextDOMElement().addEventListener('focus', ev => {
-            if (ciphertextHasError()) { encryptPlaintextAndSetCiphertext(); }
+        $('plaintext').addEventListener('focus', ev => {
+            if (ciphertextHasError()) { encryptPlaintextAndSetCipherText(); }
         });
         // redo encryption if any of the fields used to encrypt has changed
         getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
@@ -1139,31 +1108,31 @@ button.action {
         });
         // redo decryption if the ciphertext has changed (or may have changed)
         ['input', 'focus'].forEach(eventType => {
-            getCiphertextDOMElement().addEventListener(eventType, poorDebounce(ev => updatePlaintextFromCiphertext()))
+            $('ciphertext').addEventListener(eventType, poorDebounce(ev => updatePlaintextFromCiphertext()))
         });
 
-        getDownloadCiphertextButtonDOMElement().addEventListener('click', onDownloadCiphertextButtonClicked);
-        getDownloadCleartextButtonDOMElement().addEventListener('click', onDownloadCleartextButtonClicked);
-        getReloadCiphertextButtonDOMElement().addEventListener('click', onReloadCiphertextButtonClicked);
-        getUploadCiphertextButtonDOMElement().addEventListener('click', onUploadCiphertextButtonClicked);
+        $('download-ciphertext').addEventListener('click', onDownloadCiphertextButtonClicked);
+        $('download-cleartext').addEventListener('click', onDownloadCleartextButtonClicked);
+        $('reload-ciphertext').addEventListener('click', onReloadCiphertextButtonClicked);
+        $('upload-ciphertext').addEventListener('click', onUploadCiphertextButtonClicked);
 
         if (!getPBKDF2Salt()) {
-            getSaltIsMissingDOMElement().style.display = 'block';
+            $('salt-is-missing').style.display = 'block';
         }
 
-        [getSecretDOMElement(), getConfirmSecretDOMElement()].forEach((elem) => {
-            const loginBtn = getLoginButtonDOMElement();
+        [$('secret'), $('confirm-secret')].forEach((elem) => {
+            const loginBtn = $('login-btn');
 
             elem.addEventListener('input', () => {
-                loginBtn.disabled = getConfirmSecret() !== getSecret();
+                loginBtn.disabled = getValueAt('confirm-secret') !== getValueAt('secret');
             });
         });
 
-        getLoginFormDOMElement().addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
+        $('login-form').addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
         document.querySelectorAll('#login-form .login-text').forEach(elem => {
             elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
         });
-        getLogoutButtonDOMElement().addEventListener('click', () => {
+        $('logout-btn').addEventListener('click', () => {
             document.location.reload();
         });
     }
