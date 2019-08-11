@@ -626,17 +626,15 @@ const discardLatestError = () => {
 
 const displayErrorBanner = () => {
     const errorMessage = ERRORS_QUEUE.slice(-1)[0];
-    $('error-bar').classList.remove('bump');
-    $('error-bar').classList.add('no-bump');
+    $('error-bar').classList.replace('bump', 'no-bump');
     setTimeout(() => {
         $('error-bar').innerText = errorMessage || '';
-        $('error-bar').classList.remove('no-bump');
-        $('error-bar').classList.add('bump');
+        $('error-bar').classList.replace('no-bump', 'bump');
     }, 10);
 }
 
 const toggleOverlay = (isVisible) => {
-    $('overlay').classList.toggle('is-hidden', Boolean(!isVisible));
+    $('overlay').classList.toggle('is-hidden', !isVisible);
 }
 
 const ciphertextHasError = () => $('ciphertext').classList.contains('has-error');
