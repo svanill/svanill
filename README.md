@@ -40,7 +40,7 @@ goals.
 F.A.Q.
 ======
 
-# How is contrent encrypted?
+# How is content encrypted?
 
 Content is encrypted using AES-GCM. The size of the iv (a nonce) is 96 bit. The iv is a random sequence created through [window.crypto.getRandomValues()](https://developer.mozilla.org/en-US/docs/Web/API/RandomSource/getRandomValues) (its PRNG is suitable for cryptographic usages).
 The key is derived with PBKDF2, using SHA-256 as hash, 60.000 iterations (default, editable). The salt is up to the user (is suggested to be at least 8 characters long).
