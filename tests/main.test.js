@@ -427,14 +427,14 @@ describe('willRequestEncryption',  function () {
     let orig_willEncryptPlaintext = willEncryptPlaintext;
     let orig_getPBKDF2Salt = getPBKDF2Salt;
     let orig_getPBKDF2Iterations = getPBKDF2Iterations;
-    let orig_getSecret = getSecret;
+    let orig_getValueAt = getValueAt;
 
     beforeEach(() => {
         getRandomValueStub = sinon.stub(window.crypto, 'getRandomValues');
         willEncryptPlaintext = sinon.stub();
         getPBKDF2Salt = sinon.stub();
         getPBKDF2Iterations = sinon.stub();
-        getSecret = sinon.stub();
+        getValueAt = sinon.stub();
     });
 
     afterEach(() => {
@@ -442,7 +442,7 @@ describe('willRequestEncryption',  function () {
         willEncryptPlaintext = orig_willEncryptPlaintext;
         getPBKDF2Salt = orig_getPBKDF2Salt;
         getPBKDF2Iterations = orig_getPBKDF2Iterations;
-        getSecret = orig_getSecret;
+        getValueAt = orig_getValueAt;
     });
 
     it('return an empty string if the plaintext is empty', function() {
@@ -454,7 +454,7 @@ describe('willRequestEncryption',  function () {
     });
 
     it('will call willEncryptPlaintext with the proper arguments', function() {
-        getSecret.returns('such secret');
+        getValueAt.returns('such secret');
         getPBKDF2Salt.returns('this is a salt');
         getPBKDF2Iterations.returns(2);
         const b_iv = new Uint8Array(16);
@@ -466,6 +466,7 @@ describe('willRequestEncryption',  function () {
 
         willRequestEncryption('some text');
         expect(willEncryptPlaintext.called).toBe(true);
+        expect(getValueAt.calledWith('secret'));
         expect(willEncryptPlaintext.calledWith(
             'some text', 'such secret', {
                 salt: 'this is a salt',

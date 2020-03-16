@@ -29,7 +29,9 @@ const concatScriptPreProcessor = options => (
             ].join('')));
 
             if (matchResult) {
-                extractedScripts.push(matchResult[1]);
+                // XXX ignoble hack to be able to mock some things in the tests
+                const scriptContent = matchResult[1].replace(/const /g, 'let ');
+                extractedScripts.push(scriptContent);
             }
         }
 
