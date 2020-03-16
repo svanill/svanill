@@ -498,7 +498,7 @@ class DeriveKeyError extends Error {};
  * >>> });
  */
 async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
-    const baseKey = await willGenerateKeyPBKDF2(secret)
+    const baseKey = await willGenerateKeyPBKDF2(secret);
     const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
     const b_ad = stringToUint8Array(JSON.stringify(optionsPBKDF2));
     const b_enc = await crypto.subtle.encrypt(
@@ -552,7 +552,7 @@ async function willDecryptCiphertext(encryptedBox, secret) {
         iterations: additionalData.iterations || 1,
     };
 
-    const baseKey = await willGenerateKeyPBKDF2(secret)
+    const baseKey = await willGenerateKeyPBKDF2(secret);
     const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
     const b_dec = await crypto_subtle_decrypt_exceptional(
         {
@@ -604,9 +604,9 @@ function makeDateTimePrefix(date) {
     return datePart + '_' + timePart.replace(/:/g, '');
 }
 
-const $ = id => document.getElementById(id)
-const setValueAt = (id, value) => $(id).value = value
-const getValueAt = (id) => $(id).value
+const $ = id => document.getElementById(id);
+const setValueAt = (id, value) => $(id).value = value;
+const getValueAt = (id) => $(id).value;
 
 const getPBKDF2Salt = () => PBKDF2_SALT;
 const getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
@@ -620,9 +620,9 @@ const pushErrorToDisplayQueue = (e) => {
 };
 
 const discardLatestError = () => {
-    ERRORS_QUEUE.pop()
+    ERRORS_QUEUE.pop();
     displayErrorBanner();
-}
+};
 
 const displayErrorBanner = () => {
     const errorMessage = ERRORS_QUEUE.slice(-1)[0];
@@ -631,18 +631,18 @@ const displayErrorBanner = () => {
         $('error-bar').innerText = errorMessage || '';
         $('error-bar').classList.replace('no-bump', 'bump');
     }, 10);
-}
+};
 
 const toggleOverlay = (isVisible) => {
     $('overlay').classList.toggle('is-hidden', !isVisible);
-}
+};
 
 const ciphertextHasError = () => $('ciphertext').classList.contains('has-error');
 const setCiphertextError = (errorMessage) => {
     const hasError = Boolean(errorMessage.trim());
     $('ciphertext').classList.toggle('has-error', hasError);
     $('ciphertext-error-bar').innerText = errorMessage;
-}
+};
 
 const encryptPlaintextAndSetCiphertext = async function() {
     try {
@@ -654,7 +654,7 @@ const encryptPlaintextAndSetCiphertext = async function() {
     }
 };
 
-getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
+const getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
 
 async function updatePlaintextFromCiphertext() {
     setCiphertextError('');
@@ -713,7 +713,7 @@ async function onReloadCiphertextButtonClicked(ev) {
 async function _willGetAuthToken() {
     try {
         // user exists, we've got a challenge to decrypt
-        const challenge = (await willRequestChallenge()).content.challenge
+        const challenge = (await willRequestChallenge()).content.challenge;
         return (await willAnswerChallenge(challenge)).content.token;
     } catch (e) {
         if (e instanceof UserDoesNotExistError) {
@@ -744,7 +744,7 @@ const willGetAuthToken = (() => {
             token = await _willGetAuthToken();
         }
         return token;
-    }
+    };
 })();
 
 async function willRequestChallenge() {
@@ -906,7 +906,7 @@ async function willRequestUploadUrl(filename) {
         headers: {
             Authorization: `Bearer ${token}`,
         },
-    })
+    });
 
     if (parsedResponse.error) {
         throw new CannotRequestUploadUrlError(parsedResponse.error);
@@ -941,7 +941,7 @@ async function willUploadCiphertext(uploadUrl, ciphertext) {
         });
 
         if (!response.ok) {
-            throw new UploadCiphertextError('Couldn\'t upload the ciphertext, response status was: ' + statusText);
+            throw new UploadCiphertextError('Couldn\'t upload the ciphertext, response status was: ' + response.statusText);
         }
 
         return response;
@@ -1105,7 +1105,7 @@ function onPageLoaded() {
     });
     // redo decryption if the ciphertext has changed (or may have changed)
     ['input', 'focus'].forEach(eventType => {
-        $('ciphertext').addEventListener(eventType, poorDebounce(ev => updatePlaintextFromCiphertext()))
+        $('ciphertext').addEventListener(eventType, poorDebounce(ev => updatePlaintextFromCiphertext()));
     });
 
     $('download-ciphertext').addEventListener('click', onDownloadCiphertextButtonClicked);
