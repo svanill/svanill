@@ -1138,9 +1138,7 @@ function onPageLoaded() {
     });
 
     $('login-form').addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
-    document.querySelectorAll('#login-form .login-text').forEach(elem => {
-        elem.addEventListener('keyup', ev => ev.key === 'Enter' && attemptLogin());
-    });
+
     $('logout-btn').addEventListener('click', () => {
         document.location.reload();
     });
