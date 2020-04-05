@@ -294,21 +294,20 @@ describe('willEncryptPlaintext',  () => {
         expect(result1).not.toBe(result2);
     });
 
-    it('produces a string made by three parts: the pbkdf2 options, the iv and the encoded data', async function() {
+    it('produces a string made by two parts: additional data and encoded data', async function() {
         const result = await willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
         expect(typeof result).toBe('string');
         const parts = result.split('.');
-        expect(parts.length).toBe(3);
-        const [ad, iv, ciphertext] = parts;
+        expect(parts.length).toBe(2);
+        const [ad, ciphertext] = parts;
 
-        expect(iv).toBe('AAAAAAAAAAAAAAAAAAAAAA==');
-        expect(atob(iv)).toBe('\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        expect(ad).toBe('eyJvcHRfcGJrZGYyIjp7InNhbHQiOiJ0aGlzIGlzIGEgc2FsdCIsIml0ZXJhdGlvbnMiOjJ9LCJpdiI6IjAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0=');
 
-        expect(ad).toBe('eyJzYWx0IjoidGhpcyBpcyBhIHNhbHQiLCJpdGVyYXRpb25zIjoyfQ==');
         // note that this may fail if the json ended up with a different keys' order
-        expect(atob(ad)).toBe('{"salt":"this is a salt","iterations":2}');
+        const expectedAd = `{"opt_pbkdf2":{"salt":"this is a salt","iterations":2},"iv":"00000000000000000000000000000000"}`
+        expect(atob(ad)).toBe(expectedAd);
 
-        expect(ciphertext).toBe('6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==');
+        expect(ciphertext).toBe('6nqCpNcjM/ghMMC3QclCZ8DUDfQtcjkFHg==');
         // you should find a test that revert this ciphertext
     });
 });
@@ -316,14 +315,14 @@ describe('willEncryptPlaintext',  () => {
 describe('willDecryptCiphertext',  function () {
     it('can decrypt encrypted data', async function() {
         const secret = 'such secret';
-        const encryptedBox = 'eyJzYWx0IjoidGhpcyBpcyBhIHNhbHQiLCJpdGVyYXRpb25zIjoyfQ==.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+        const encryptedBox = 'eyJvcHRfcGJrZGYyIjp7InNhbHQiOiJ0aGlzIGlzIGEgc2FsdCIsIml0ZXJhdGlvbnMiOjJ9LCJpdiI6IjAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0=.6nqCpNcjM/ghMMC3QclCZ8DUDfQtcjkFHg==';
         const decryptedBox = await willDecryptCiphertext(encryptedBox, secret);
 
         expect(decryptedBox.plaintext).not.toBeUndefined();
         expect(decryptedBox.plaintext).toBe('some text');
 
         expect(decryptedBox.additionalData).not.toBeUndefined();
-        expect(decryptedBox.additionalData).toEqual({ salt: 'this is a salt', iterations: 2 });
+        expect(decryptedBox.additionalData.opt_pbkdf2).toEqual({ salt: 'this is a salt', iterations: 2 });
 
         expect(decryptedBox.iv).not.toBeUndefined();
         expect(decryptedBox.iv).toEqual(new Uint8Array(16));
@@ -331,7 +330,7 @@ describe('willDecryptCiphertext',  function () {
 
     it('throws JSONDecodeError if it cannot decode the additional data', async function() {
         const secret = 'such secret';
-        const encryptedBox = btoa('WRONG_ADDITIONAL_DATA') + '.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+        const encryptedBox = btoa('WRONG_ADDITIONAL_DATA') + '.6nqCpNcjM/ghMMC3QclCZ8DUDfQtcjkFHg==';
 
         try {
             await willDecryptCiphertext(encryptedBox, secret);
@@ -344,9 +343,12 @@ describe('willDecryptCiphertext',  function () {
     it('throws SubtleDecryptError if it the salt is wrong', async function() {
         const secret = 'such secret';
         const encryptedBox = btoa(JSON.stringify({
-            salt: 'wrong',
-            iterations: 2,
-        })) + '.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+            opt_pbkdf2: {
+                salt: 'wrong',
+                iterations: 2,
+            },
+            iv: "00000000000000000000000000000000",
+        })) + '.6nqCpNcjM/ghMMC3QclCZ8DUDfQtcjkFHg==';
 
         try {
             await willDecryptCiphertext(encryptedBox, secret);
@@ -359,9 +361,12 @@ describe('willDecryptCiphertext',  function () {
     it('throws SubtleDecryptError if it the iteration count is the wrong number', async function() {
         const secret = 'such secret';
         const encryptedBox = btoa(JSON.stringify({
-            salt: 'this is a salt',
-            iterations: 3,
-        })) + '.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+            opt_pbkdf2: {
+                salt: 'this is a salt',
+                iterations: 3,
+            },
+            iv: "00000000000000000000000000000000",
+        })) + '.6nqCpNcjM/ghMMC3QclCZ8DUDfQtcjkFHg==';
 
         try {
             await willDecryptCiphertext(encryptedBox, secret);
@@ -374,9 +379,12 @@ describe('willDecryptCiphertext',  function () {
     it('throws DeriveKeyError if it the iteration count is not a number', async function() {
         const secret = 'such secret';
         const encryptedBox = btoa(JSON.stringify({
-            salt: 'this is a salt',
-            iterations: 'not a number',
-        })) + '.AAAAAAAAAAAAAAAAAAAAAA==.6nqCpNcjM/ghOGTW28Ur825s6ljPcVKZKQ==';
+            opt_pbkdf2: {
+                salt: 'this is a salt',
+                iterations: 'not a number',
+            },
+            iv: "00000000000000000000000000000000",
+        })) + '.6nqCpNcjM/ghMMC3QclCZ8DUDfQtcjkFHg==';
 
         try {
             await willDecryptCiphertext(encryptedBox, secret);
@@ -388,7 +396,7 @@ describe('willDecryptCiphertext',  function () {
 
     it('throws SubtleDecryptError if it the ciphertext is wrong', async function() {
         const secret = 'such secret';
-        const encryptedBox = 'eyJzYWx0IjoidGhpcyBpcyBhIHNhbHQiLCJpdGVyYXRpb25zIjoyfQ==.AAAAAAAAAAAAAAAAAAAAAA==.' + btoa('wrong');
+        const encryptedBox = 'eyJvcHRfcGJrZGYyIjp7InNhbHQiOiJ0aGlzIGlzIGEgc2FsdCIsIml0ZXJhdGlvbnMiOjJ9LCJpdiI6IjAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0=.' + btoa('wrong');
 
         try {
             await willDecryptCiphertext(encryptedBox, secret);

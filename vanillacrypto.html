@@ -419,6 +419,10 @@ function bufToHex(buffer) {
     return new Uint8Array(buffer).reduce((a, b) => a + ('0' + b.toString(16)).slice(-2), '');
 }
 
+function hexToBuf(text) {
+    return new Uint8Array(text.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+}
+
 function getRandomHexString(length) {
     const array = new Uint8Array(Math.ceil(length/2));
     window.crypto.getRandomValues(array);
@@ -479,11 +483,16 @@ class DeriveKeyError extends Error {};
  * @param arrayBuffer b_iv a nonce to use in AES-GCM
  * @return Promise that will resolve to our encrypted box format.
  *
- * The encrypted box is formed by 3 base64 encoded parts (additional data,
- * iv, ciphertext <concat> tag), separated by a dot.
+ * The encrypted box is formed by 2 base64 encoded parts (additional data,
+ * ciphertext), separated by a dot.
  *
- * The additional data is a JSON object with the salt and iterations used
- * to derive the key with PBKDF2.
+ * The additional data is a JSON object containing everything required to
+ * decode the ciphertext, minus the key.
+ * It has the following format:
+ *   {
+ *     "opt_pbkdf2": { "salt": "<some salt>", "iterations": <some number> },
+ *     "iv": "iv, as hex",
+ *   }
  *
  * >>> willEncryptPlaintext(
  * >>>     'the text to encrypt',
@@ -500,7 +509,11 @@ class DeriveKeyError extends Error {};
 async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
     const baseKey = await willGenerateKeyPBKDF2(secret);
     const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
-    const b_ad = stringToUint8Array(JSON.stringify(optionsPBKDF2));
+    const b_ad = stringToUint8Array(JSON.stringify({
+        opt_pbkdf2: optionsPBKDF2,
+        iv: bufToHex(b_iv),
+    }));
+
     const b_enc = await crypto.subtle.encrypt(
         {
             name: 'AES-GCM',
@@ -511,11 +524,7 @@ async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
         stringToUint8Array(plaintext)
     );
 
-    return [
-        u_btoa(b_ad),
-        u_btoa(b_iv),
-        u_btoa(b_enc), // ciphertext | tag
-    ].join('.');
+    return u_btoa(b_ad) + '.' + u_btoa(b_enc);
 }
 
 function json_parse_exceptional(string) {
@@ -543,13 +552,14 @@ class SubtleDecryptError extends Error {};
  *
  */
 async function willDecryptCiphertext(encryptedBox, secret) {
-    const [b64_ad = '', b64_iv = '', b64_enc = ''] = encryptedBox.split('.');
-    const [b_ad, b_iv, b_enc] = [b64_ad, b64_iv, b64_enc].map(u_atob);
+    const [b64_ad = '', b64_enc = ''] = encryptedBox.split('.');
+    const [b_ad, b_enc] = [b64_ad, b64_enc].map(u_atob);
     const additionalData = json_parse_exceptional(bufToString(b_ad));
+    const b_iv = hexToBuf(additionalData.iv);
 
     const optionsPBKDF2 = {
-        salt: additionalData.salt || '',
-        iterations: additionalData.iterations || 1,
+        salt: (additionalData.opt_pbkdf2 || {}).salt || '',
+        iterations: (additionalData.opt_pbkdf2 || {}).iterations || 1,
     };
 
     const baseKey = await willGenerateKeyPBKDF2(secret);
