@@ -1109,7 +1109,7 @@ function onPageLoaded() {
     // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
     // change the ciphertext without reason
     $('plaintext').addEventListener('focus', ev => {
-        if (ciphertextHasError()) { encryptPlaintextAndSetCipherText(); }
+        if (ciphertextHasError()) { encryptPlaintextAndSetCiphertext(); }
     });
     // redo encryption if any of the fields used to encrypt has changed
     getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
