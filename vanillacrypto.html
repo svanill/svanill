@@ -3,12 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <title>Vanillacrypto</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <script>
-// Salt, it ensures that two people with the same password will generate
-// different secret keys. It should be at least 8 random characters long.
-const PBKDF2_SALT = new URLSearchParams(document.location.search).get('salt')
-      || ''; // <== insert the salt inside the two '' on the far left
 // Iteration count for PBKDF2. At least 10000. The higher the value
 // the longer you'll need to wait after entering the password to
 // derive the key used for encryption.
@@ -331,11 +327,6 @@ button.action {
 </head>
 <body spellcheck="false" class="require-login enable-external-actions" onload="onPageLoaded()">
 
-<div id="salt-is-missing">
-    You didn't set a "salt". Open the file and read the instructions near
-    PBKDF2_SALT or pass the query parameter "salt".
-</div>
-
 <form id="login-form" class="page-load">
     <label class="login-label" for="username">Username (optional)</label>
     <input id="username" type="text"
@@ -618,7 +609,7 @@ const $ = id => document.getElementById(id);
 const setValueAt = (id, value) => $(id).value = value;
 const getValueAt = (id) => $(id).value;
 
-const getPBKDF2Salt = () => PBKDF2_SALT;
+const getPBKDF2Salt = () => window.getRandomHexString(16);
 const getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
 
 const pushErrorToDisplayQueue = (e) => {
@@ -1124,10 +1115,6 @@ function onPageLoaded() {
     $('download-cleartext').addEventListener('click', onDownloadCleartextButtonClicked);
     $('reload-ciphertext').addEventListener('click', onReloadCiphertextButtonClicked);
     $('upload-ciphertext').addEventListener('click', onUploadCiphertextButtonClicked);
-
-    if (!getPBKDF2Salt()) {
-        $('salt-is-missing').style.display = 'block';
-    }
 
     [$('secret'), $('confirm-secret')].forEach((elem) => {
         const loginBtn = $('login-btn');
