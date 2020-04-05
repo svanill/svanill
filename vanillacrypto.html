@@ -858,14 +858,13 @@ async function onUploadCiphertextButtonClicked(ev) {
 
     try {
         const ciphertext = await willRequestEncryption(getValueAt('plaintext')); // XXX this way we upload something different from what the user sees !!!!
-        const uploadUrl = await willRequestUploadUrl(filename);
+        const { uploadUrl, retrieveUrl } = await willRequestUploadUrl(filename);
         if (uploadUrl.slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
             throw new Error('The server proposed to upload the file to an untrusted url!');
         }
         await willUploadCiphertext(uploadUrl, ciphertext);
 
-        const objectUrl = uploadUrl.replace(/\?.*$/, '');
-        const uploadedContent = await willDownload(objectUrl);
+        const uploadedContent = await willDownload(retrieveUrl);
         if (uploadedContent !== ciphertext) {
             throw new Error('The uploaded file does not match the original file');
         }
@@ -922,7 +921,10 @@ async function willRequestUploadUrl(filename) {
         throw new CannotRequestUploadUrlError(parsedResponse.error);
     }
 
-    return parsedResponse.links.upload_url.href;
+    return {
+        uploadUrl: parsedResponse.links.upload_url.href,
+        retrieveUrl: parsedResponse.links.retrieve_url.href,
+    };
 }
 
 class CannotRequestUploadUrlError extends Error {
