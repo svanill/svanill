@@ -849,11 +849,11 @@ async function onUploadCiphertextButtonClicked(ev) {
 
     try {
         const ciphertext = await willRequestEncryption(getValueAt('plaintext')); // XXX this way we upload something different from what the user sees !!!!
-        const { uploadUrl, retrieveUrl } = await willRequestUploadUrl(filename);
+        const { uploadUrl, uploadFormData, retrieveUrl } = await willRequestUploadUrl(filename);
         if (uploadUrl.slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
             throw new Error('The server proposed to upload the file to an untrusted url!');
         }
-        await willUploadCiphertext(uploadUrl, ciphertext);
+        await willUploadCiphertext(uploadUrl, uploadFormData, ciphertext);
 
         const uploadedContent = await willDownload(retrieveUrl);
         if (uploadedContent !== ciphertext) {
@@ -914,6 +914,7 @@ async function willRequestUploadUrl(filename) {
 
     return {
         uploadUrl: parsedResponse.links.upload_url.href,
+        uploadFormData: parsedResponse.links.upload_url.form_data,
         retrieveUrl: parsedResponse.links.retrieve_url.href,
     };
 }
@@ -926,25 +927,35 @@ class CannotRequestUploadUrlError extends Error {
     }
 }
 
-async function willUploadCiphertext(uploadUrl, ciphertext) {
+async function willUploadCiphertext(uploadUrl, uploadFormData, ciphertext) {
     try {
-        const href = uploadUrl;
-        const response = await fetchOrThrow(href, {
+        const formData = new FormData();
+        for (let [key, value] of Object.entries(uploadFormData)) {
+            formData.append(key, value);
+        }
+        const blob = new Blob([ciphertext], { type: "text/plain"});
+        formData.append("file", blob);
+
+        const response = await fetchOrThrow(uploadUrl, {
             headers: {
                 'Cache-Control': 'None',
                 'Expect': '100-continue',
                 'Content-Encoding': 'utf-8',
-                'Content-Type': 'text/plain',
                 // XXX ... no md5 in crypto subtle, so we can't rely on it.
                 // We'll have to download the file and verify his content later
                 // 'Content-MD5': 'application/json',
             },
-            method: 'PUT',
-            body: ciphertext,
+            method: 'POST',
+            body: formData,
         });
 
         if (!response.ok) {
-            throw new UploadCiphertextError('Couldn\'t upload the ciphertext, response status was: ' + response.statusText);
+            const responseContent = await response.text();
+            const errorDoc = (new window.DOMParser()).parseFromString(responseContent, "application/xml");
+            const errorMessageElem = errorDoc.querySelector('Error > Message');
+            const errorMessage = errorMessageElem === null ? responseContent : errorMessageElem.textContent;
+
+            throw new UploadCiphertextError('Couldn\'t upload the ciphertext, response was: ' + `${errorMessage}`);
         }
 
         return response;
