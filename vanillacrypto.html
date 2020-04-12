@@ -191,7 +191,7 @@ button.action {
 
 #error-bar {
     line-height: 1.5em;
-    background-color: var(--error-color);
+    background-color: white;
     color: black;
     text-align: center;
     position: fixed;
@@ -200,41 +200,17 @@ button.action {
     cursor: pointer;
 }
 
+#error-bar.bump {
+    transition: background-color 0.5s ease;
+    background-color: var(--error-color);
+}
+
 #error-bar:not(:empty)::after {
     content: "x";
     position: absolute;
     right: 0.5em;
     font-family: var(--font-mono);
     font-weight: bold;
-}
-
-@keyframes bounce {
-    0%, 20%, 53%, 80%, 100% {
-        transition-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
-        transform: translate3d(0,0,0);
-    }
-    40%, 43% {
-        transition-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
-        transform: translate3d(0, 30px, 0);
-    }
-    70% {
-        transition-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
-        transform: translate3d(0, 15px, 0);
-    }
-    90% {
-        transform: translate3d(0,4px,0);
-    }
-}
-
-.bump {
-    animation: bounce 1s ;
-    transform-origin: center bottom;
-}
-
-.no-bump {
-    animation: bounce 1s;
-    transform-origin: center bottom;
-    animation-direction: reverse;
 }
 
 #overlay {
@@ -262,7 +238,6 @@ button.action {
   border-top-color: #333;
   animation: spinner-animation .6s linear infinite;
 }
-
 
 </style>
 </head>
@@ -568,11 +543,9 @@ const discardLatestError = () => {
 
 const displayErrorBanner = () => {
     const errorMessage = ERRORS_QUEUE.slice(-1)[0];
-    $('error-bar').classList.replace('bump', 'no-bump');
-    setTimeout(() => {
-        $('error-bar').innerText = errorMessage || '';
-        $('error-bar').classList.replace('no-bump', 'bump');
-    }, 10);
+    $('error-bar').classList.remove('bump');
+    window.requestAnimationFrame(() => $('error-bar').classList.add('bump'));
+    $('error-bar').innerText = errorMessage || '';
 };
 
 const toggleOverlay = (isVisible) => {
