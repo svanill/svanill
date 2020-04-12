@@ -280,7 +280,7 @@ button.action {
     <button id="download-ciphertext" class="action"> ⬇ download</button>
     </span>
     </p>
-    <p id="ciphertext-error-bar"></p>
+    <p id="ciphertext-error-bar" role="alert" aria-atomic="true"></p>
     <textarea id="ciphertext" autocomplete="off" placeholder="Click here to paste some text to decrypt"></textarea>
 </div>
 
@@ -289,7 +289,7 @@ button.action {
 
 </main>
 
-<p id="error-bar"></p>
+<p id="error-bar" role="alert" aria-atomic="true"></p>
 <div id="overlay" class="is-hidden"><div id="spinner"></div></div>
 
 <script id="the-script">
