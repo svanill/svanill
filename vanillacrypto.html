@@ -371,8 +371,7 @@ async function willDeriveKey(baseKey, {saltString, iterations}) {
             false, // whether the key can be extracted or not
             [ "encrypt", "decrypt" ]
         );
-    }
-    catch (e) {
+    } catch (e) {
         throw new DeriveKeyError(e.message || e.name);
     }
 }
@@ -616,13 +615,9 @@ function onDownloadCleartextButtonClicked(ev) {
 async function onReloadCiphertextButtonClicked(ev) {
     ev.preventDefault();
     toggleOverlay(true);
-    try {
-        await reloadFile();
-        toggleOverlay(false);
-    } catch (e) {
-        pushErrorToDisplayQueue(e);
-        toggleOverlay(false);
-    }
+    try { await reloadFile(); }
+    catch (e) { pushErrorToDisplayQueue(e); }
+    toggleOverlay(false);
 }
 
 async function _willGetAuthToken() {
@@ -746,9 +741,7 @@ class CannotAnswerChallengeError extends Error {
 const getFilenameOrDefault = (() => {
     let _filename = null;
     return ((defaultFilename) => {
-        if (!_filename) {
-            _filename = defaultFilename || getRandomHexString(32);
-        }
+        _filename = _filename || defaultFilename || getRandomHexString(32);
         return _filename;
     });
 })();
@@ -798,9 +791,8 @@ async function reloadFile() {
         setValueAt('ciphertext', ciphertext);
         updatePlaintextFromCiphertext();
     } catch (e) {
-        if (e instanceof CannotRetrieveFilesListError) {
-            throw e;
-        } else if (e instanceof DownloadError) {
+        if (e instanceof CannotRetrieveFilesListError
+            || e instanceof DownloadError) {
             throw e;
         } else {
             console.error(e);
