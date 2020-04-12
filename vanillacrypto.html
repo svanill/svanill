@@ -65,34 +65,12 @@ p {
     flex-wrap: wrap;
 }
 
-#secret {
-    box-sizing: border-box;
-    padding: 0 0.2em;
-    margin-right: 0.2em;
-}
-
 label {
     cursor: pointer;
 }
 
 textarea, button {
     box-sizing: border-box;
-}
-
-button {
-    padding: 0 0.9em;
-}
-
-button::-moz-focus-inner,
-input[type="button"]::-moz-focus-inner,
-input[type="submit"]::-moz-focus-inner,
-input[type="reset"]::-moz-focus-inner {
-  padding: 0 !important;
-  border: 0 none !important;
-}
-
-input[type=text], input[type=password] {
-    padding: 0 0.3em;
 }
 
 .plaintext-container, .ciphertext-container {
@@ -103,15 +81,6 @@ input[type=text], input[type=password] {
     flex-direction: column;
     min-width: 360px;
     margin-top: 1em;
-}
-
-.plaintext-container > textarea,
-.ciphertext-container > textarea {
-    flex: 1 1 100%;
-}
-
-#plaintext, #ciphertext {
-    min-height: 70vh;
 }
 
 #ciphertext {
@@ -135,16 +104,9 @@ button {
     cursor: pointer;
 }
 
-#salt-is-missing {
-    display: none;
-    background-color: var(--warning-color);
-    color: black;
-    margin-bottom: 1em;
-    padding: 0.3em;
-    text-align: center;
-}
-
 textarea {
+  flex: 1 1 100%;
+  min-height: 70vh; /* effective on narrow windows when textareas reflow */
   background: none repeat scroll 0 0 rgba(0, 0, 0, 0.07);
   border-radius: 6px;
   border-style: none solid solid none;
@@ -164,7 +126,6 @@ textarea:focus {
     outline-width: 0;
 }
 
--webkit-input-placeholder,
 textarea::placeholder {
     font-weight: bold;
     color: var(--main-fg-color);
@@ -174,15 +135,6 @@ textarea::placeholder {
 
 textarea:focus::placeholder {
     color: transparent;
-}
-
-.page-load {
-    animation: fadein 1000ms;
-}
-
-@keyframes fadein {
-    from { opacity: 0}
-    to   { opacity: 1}
 }
 
 #login-form {
@@ -196,15 +148,15 @@ textarea:focus::placeholder {
     background-color: transparent;
     color: var(--main-fg-color);
     border: none;
-    outline: none;
 	border-bottom: 2px solid var(--highlight-color);
     margin-bottom: 2em;
-    border-radius: 2px;
     width: 90%;
 }
 
-.login-label {
-    font-size: 0.8em;
+.login-text:focus {
+    background-color: white;
+    color: var(--main-bg-color);
+    transition: color 2s, outline-color .7s ease-out, background-color .7s ease-out;
 }
 
 .require-login .main-container,
@@ -254,8 +206,7 @@ button.action {
     text-align: center;
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    width: 100%;
     cursor: pointer;
 }
 
