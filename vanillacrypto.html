@@ -1000,15 +1000,11 @@ async function attemptLogin() {
     }
 }
 
-function poorDebounce(func, wait) {
-    let timeoutId = null;
-    return function() {
-        const args = arguments;
-        if (timeoutId) {
-            clearInterval(timeoutId);
-            timeoutId = null;
-        }
-        timeoutId = setTimeout(() => func.apply(null, args), wait || 50);
+function debounce(func, wait) {
+    let timeoutId = undefined;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func(...args), wait || 50);
     };
 }
 
@@ -1021,11 +1017,11 @@ function onPageLoaded() {
     });
     // redo encryption if any of the fields used to encrypt has changed
     getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
-        elem.addEventListener('input', poorDebounce(ev => encryptPlaintextAndSetCiphertext()));
+        elem.addEventListener('input', debounce(ev => encryptPlaintextAndSetCiphertext()));
     });
     // redo decryption if the ciphertext has changed (or may have changed)
     ['input', 'focus'].forEach(eventType => {
-        $('ciphertext').addEventListener(eventType, poorDebounce(ev => updatePlaintextFromCiphertext()));
+        $('ciphertext').addEventListener(eventType, debounce(ev => updatePlaintextFromCiphertext()));
     });
 
     $('download-ciphertext').addEventListener('click', onDownloadCiphertextButtonClicked);
