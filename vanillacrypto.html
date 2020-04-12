@@ -716,25 +716,22 @@ async function willCreateNewUser() {
 
 class CannotCreateNewUserError extends Error {
     constructor(jsonError) {
-        super();
-        this.message = 'Couldn\'t create the user. Server response was: ' +
-        '[' + jsonError.code + '] ' + jsonError.message;
+        super(`Couldn't create the user. Server response was: ` +
+        `[${jsonError.code}] ${jsonError.message}`);
     }
 }
 
 class CannotRequestChallengeError extends Error {
     constructor(jsonError) {
-        super();
-        this.message = 'Couldn\'t start authentication. Server response was: ' +
-        '[' + jsonError.code + '] ' + jsonError.message;
+        super(`Couldn't start authentication. Server response was: ` +
+        `[${jsonError.code}] ${jsonError.message}`);
     }
 }
 
 class CannotAnswerChallengeError extends Error {
     constructor(jsonError) {
-        super();
-        this.message = 'Couldn\'t authenticate. Server response was: ' +
-        '[' + jsonError.code + '] ' + jsonError.message;
+        super(`Couldn't authenticate. Server response was: ` +
+        `[${jsonError.code}] ${jsonError.message}`);
     }
 }
 
@@ -827,9 +824,8 @@ async function willRequestUploadUrl(filename) {
 
 class CannotRequestUploadUrlError extends Error {
     constructor(jsonError) {
-        super();
-        this.message = 'Cannot get the url to upload to. Server response was: ' +
-        '[' + jsonError.code + '] ' + jsonError.message;
+        super(`Cannot get the url to upload to. Server response was: ` +
+        `[${jsonError.code}] ${jsonError.message}`);
     }
 }
 
@@ -893,8 +889,7 @@ async function willDownload(href) {
 
 class DownloadError extends Error {
     constructor(statusText) {
-        super();
-        this.message = 'Couldn\'t download the file. Server response was: ' + statusText;
+        super(`Couldn't download the file. Server response was: ${statusText}`);
     }
 }
 
@@ -921,30 +916,21 @@ async function fetchJSONWithRetryOnAuthExpired(href, options) {
 }
 
 class FetchUnexpectedError extends Error {
-    constructor(orig) {
-        super();
-        this.message = "Cannot fetch an external resource: check your internet connection or configuration";
-        this.details = orig;
+    constructor() {
+        super("Cannot fetch an external resource: check your internet connection or configuration");
     }
 }
 class FetchRequestTimedOutError extends Error {
     constructor() {
-        super();
-        this.message = "The request is taking too long to complete";
+        super("The request is taking too long to complete");
     }
 }
-class FetchUnexpectedFormat extends Error {
-    constructor(statusText) {
-        super();
-        this.message = statusText;
-    }
-}
+class FetchUnexpectedFormat extends Error {}
 
 class CannotRetrieveFilesListError extends Error {
     constructor(jsonError) {
-        super();
-        this.message = 'Cannot retrieve the files\' list. Server response was: ' +
-        '[' + jsonError.code + '] ' + jsonError.message;
+        super(`Cannot retrieve the files' list. Server response was: ` +
+        `[${jsonError.code}] ${jsonError.message}`);
     }
 }
 
@@ -1043,7 +1029,6 @@ function onPageLoaded() {
         document.location.reload();
     });
 }
-
 </script>
 </body>
 </html>
