@@ -614,18 +614,19 @@ async function onReloadCiphertextButtonClicked(ev) {
     toggleOverlay(false);
 }
 
-async function _willGetAuthToken() {
+async function _willGetAuthToken(username, secret) {
     try {
-        // user exists, we've got a challenge to decrypt
-        const challenge = (await willRequestChallenge()).content.challenge;
-        return (await willAnswerChallenge(challenge)).content.token;
+        const challenge = (await willRequestChallenge(username)).content.challenge;
+        return (await willAnswerChallenge(username, secret, challenge)).content.token;
     } catch (e) {
         if (e instanceof UserDoesNotExistError) {
             if (!window.confirm('No user found with that username, would you like to create it?')) {
                 throw new Error('Cannot proceed');
             }
 
-            return (await willCreateNewUser()).content.token;
+            const answer = getRandomHexString(32);
+            const challenge = await willRequestEncryption(answer);
+            return (await willCreateNewUser(username, answer, challenge)).content.token;
         } else if (e instanceof SubtleDecryptError) {
             throw new Error('The password is not correct');
         } else {
@@ -645,15 +646,15 @@ const willGetAuthToken = (() => {
 
     return async function(options) {
         if (!token || (options || {}).refresh) {
-            token = await _willGetAuthToken();
+            token = await _willGetAuthToken(getValueAt('username'), getValueAt('secret'));
         }
         return token;
     };
 })();
 
-async function willRequestChallenge() {
+async function willRequestChallenge(username) {
     const url = new URL(STORE_URL + '/auth/request-challenge');
-    url.searchParams.append('username', getValueAt('username'));
+    url.searchParams.append('username', username);
 
     const parsedResponse = await fetchJSON(url.href);
 
@@ -669,17 +670,14 @@ async function willRequestChallenge() {
 
 class UserDoesNotExistError extends Error {}
 
-async function willAnswerChallenge(challenge) {
-    const answerBox = await willDecryptCiphertext(challenge, getValueAt('secret'));
+async function willAnswerChallenge(username, secret, challenge) {
+    const answerBox = await willDecryptCiphertext(challenge, secret);
     const answer = answerBox.plaintext;
 
     const url = new URL(STORE_URL + '/auth/answer-challenge');
     const parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
         method: 'POST',
-        body: JSON.stringify({
-            username: getValueAt('username'),
-            answer,
-        }),
+        body: JSON.stringify({ username, answer }),
     });
 
     if (parsedResponse.error) {
@@ -689,16 +687,11 @@ async function willAnswerChallenge(challenge) {
     return parsedResponse;
 }
 
-async function willCreateNewUser() {
-    const h_answer = getRandomHexString(32);
+async function willCreateNewUser(username, answer, challenge) {
     const url = new URL(STORE_URL + '/users/');
     const parsedResponse = await fetchJSON(url.href, {
         method: 'POST',
-        body: JSON.stringify({
-            username: getValueAt('username'),
-            challenge: await willRequestEncryption(h_answer),
-            answer: h_answer,
-        }),
+        body: JSON.stringify({ username, answer, challenge }),
     });
 
     if (parsedResponse.error) {
