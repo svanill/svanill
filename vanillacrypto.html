@@ -485,8 +485,9 @@ function willRequestEncryption(plaintext) {
     if (!plaintext) return '';
     const secret = getValueAt('secret');
     const b_iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const salt = window.getRandomHexString(16)
     const optionsPBKDF2 = {
-        salt: getPBKDF2Salt(),
+        salt,
         iterations: getPBKDF2Iterations(),
     };
 
@@ -518,7 +519,6 @@ const $ = id => document.getElementById(id);
 const setValueAt = (id, value) => $(id).value = value;
 const getValueAt = (id) => $(id).value;
 
-const getPBKDF2Salt = () => window.getRandomHexString(16);
 const getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
 
 const pushErrorToDisplayQueue = (e) => {
