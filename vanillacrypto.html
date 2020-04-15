@@ -437,7 +437,7 @@ class JSONDecodeError extends Error {};
 
 function crypto_subtle_decrypt_exceptional(algorithm, key, data) {
     return crypto.subtle.decrypt(algorithm, key, data)
-    .catch(e => { throw new SubtleDecryptError; });
+    .catch(e => { throw new SubtleDecryptError(); });
 }
 
 class SubtleDecryptError extends Error {};
@@ -450,7 +450,6 @@ class SubtleDecryptError extends Error {};
  *
  * @return Promise that will resolve to an object with format {plaintext,
  * additionalData, iv}
- *
  */
 async function willDecryptCiphertext(encryptedBox, secret) {
     const [b64_ad = '', b64_enc = ''] = encryptedBox.split('.');
