@@ -314,12 +314,7 @@ function u_atob(ascii) {
 }
 
 function u_btoa(buffer) {
-    var binary = [];
-    var bytes = new Uint8Array(buffer);
-    for (var i = 0, il = bytes.byteLength; i < il; i++) {
-        binary.push(String.fromCharCode(bytes[i]));
-    }
-    return btoa(binary.join(''));
+    return btoa(Array.prototype.map.call(new Uint8Array(buffer), (v,i,a) => String.fromCharCode(v)).join(''));
 }
 
 function bufToHex(buffer) {
