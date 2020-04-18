@@ -559,8 +559,6 @@ const encryptPlaintextAndSetCiphertext = async function() {
     }
 };
 
-const getDOMElementsWhoseValuesAreUsedToEncrypt = () => document.querySelectorAll('.change-ciphertext');
-
 async function updatePlaintextFromCiphertext() {
     setCiphertextError('');
     try {
@@ -979,39 +977,33 @@ function debounce(func, wait) {
 }
 
 function onPageLoaded() {
-    $('error-bar').addEventListener('click', (ev) => discardLatestError());
-    // encrypt plaintext on focus only when there are errors, otherwise with a random IV we would
-    // change the ciphertext without reason
+    // Encrypt on focus, but only if there are errors, to avoid updating the ciphertext unnecessarily.
     $('plaintext').addEventListener('focus', ev => {
         if (ciphertextHasError()) { encryptPlaintextAndSetCiphertext(); }
     });
-    // redo encryption if any of the fields used to encrypt has changed
-    getDOMElementsWhoseValuesAreUsedToEncrypt().forEach(elem => {
+
+    // Redo encryption if any of the fields used to encrypt has changed.
+    document.querySelectorAll('.change-ciphertext').forEach(elem => {
         elem.addEventListener('input', debounce(ev => encryptPlaintextAndSetCiphertext()));
     });
-    // redo decryption if the ciphertext has changed (or may have changed)
-    ['input', 'focus'].forEach(eventType => {
-        $('ciphertext').addEventListener(eventType, debounce(ev => updatePlaintextFromCiphertext()));
-    });
+
+    // Redo decryption if the ciphertext has changed (or may have changed).
+    $('ciphertext').addEventListener('input', debounce(ev => updatePlaintextFromCiphertext()));
+    $('ciphertext').addEventListener('focus', debounce(ev => updatePlaintextFromCiphertext()));
 
     $('download-ciphertext').addEventListener('click', onDownloadCiphertextButtonClicked);
     $('download-cleartext').addEventListener('click', onDownloadCleartextButtonClicked);
     $('reload-ciphertext').addEventListener('click', onReloadCiphertextButtonClicked);
     $('upload-ciphertext').addEventListener('click', onUploadCiphertextButtonClicked);
 
-    [$('secret'), $('confirm-secret')].forEach((elem) => {
-        const loginBtn = $('login-btn');
+    const isSecretConfirmed = () => getValueAt('confirm-secret') === getValueAt('secret');
+    $('confirm-secret').addEventListener('input', () => { $('login-btn').disabled = !isSecretConfirmed() ; });
+    $('secret'        ).addEventListener('input', () => { $('login-btn').disabled = !isSecretConfirmed() ; });
 
-        elem.addEventListener('input', () => {
-            loginBtn.disabled = getValueAt('confirm-secret') !== getValueAt('secret');
-        });
-    });
+    $('error-bar').addEventListener('click', (ev) => discardLatestError());
 
     $('login-form').addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
-
-    $('logout-btn').addEventListener('click', () => {
-        document.location.reload();
-    });
+    $('logout-btn').addEventListener('click', () => { document.location.reload(); });
 }
 </script>
 </body>
