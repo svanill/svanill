@@ -5,11 +5,8 @@
 <title>Vanillacrypto</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script>
-// Iteration count for PBKDF2. At least 10000. The higher the value
-// the longer you'll need to wait after entering the password to
-// derive the key used for encryption.
-const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations')
-      || 60000;
+// Iteration count for PBKDF2 (the higher the value the longer it will take to derive the key).
+const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations') || 60000;
 // Url fo the service (an instance of Piggy Store) where you could optionally
 // store your encrypted data
 const STORE_URL = 'http://localhost:5000';
