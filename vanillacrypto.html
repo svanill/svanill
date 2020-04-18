@@ -745,8 +745,7 @@ async function onUploadCiphertextButtonClicked(ev) {
         }
         console.log('Cool, the file was uploaded correctly!');
     } catch (e) {
-        if (e instanceof UploadCiphertextError
-            || e instanceof CannotRequestUploadUrlError) {
+        if (e instanceof UploadCiphertextError || e instanceof CannotRequestUploadUrlError) {
             pushErrorToDisplayQueue(e);
         } else {
             console.error('Error uploading the ciphertext', e);
@@ -768,8 +767,7 @@ async function reloadFile() {
         setValueAt('ciphertext', ciphertext);
         updatePlaintextFromCiphertext();
     } catch (e) {
-        if (e instanceof CannotRetrieveFilesListError
-            || e instanceof DownloadError) {
+        if (e instanceof CannotRetrieveFilesListError || e instanceof DownloadError) {
             throw e;
         } else {
             console.error(e);
@@ -842,8 +840,7 @@ async function willUploadCiphertext(uploadUrl, uploadFormData, ciphertext) {
 
         return response;
     } catch (e) {
-        if (e instanceof FetchUnexpectedError
-            || e instanceof FetchRequestTimedOutError) {
+        if (e instanceof FetchUnexpectedError || e instanceof FetchRequestTimedOutError) {
             throw new UploadCiphertextError(e.message);
         } else {
             throw e;
