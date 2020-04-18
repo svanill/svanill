@@ -291,6 +291,10 @@ button.action {
 
 <script id="the-script">
 
+const $ = id => document.getElementById(id);
+const setValueAt = (id, value) => $(id).value = value;
+const getValueAt = (id) => $(id).value;
+
 function stringToUint8Array(text) {
     return new TextEncoder().encode(text);
 }
@@ -510,10 +514,6 @@ function makeDateTimePrefix(date) {
         hour: '2-digit', minute: '2-digit', second: '2-digit',
     }).format(date).replace(/\s+/g, '_').replace(/:/g, '.')
 }
-
-const $ = id => document.getElementById(id);
-const setValueAt = (id, value) => $(id).value = value;
-const getValueAt = (id) => $(id).value;
 
 const pushErrorToDisplayQueue = (e) => {
     const errorMessage = e.message || e.name || 'Unknown error';
