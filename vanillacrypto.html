@@ -502,14 +502,13 @@ function triggerDownloadDialog(blob, filename) {
 }
 
 /**
- * Return a string with the format YYYY-MM-DD_HHMMSS
+ * Format a date as YYYY-MM-DD_HH.MM.SS, using the browser's locale timezone
  */
 function makeDateTimePrefix(date) {
-    const isoDateTime = date.toISOString();
-    const datePart = isoDateTime.split('T')[0];
-    const timePart = isoDateTime.split('T')[1].split('.')[0];
-
-    return datePart + '_' + timePart.replace(/:/g, '');
+    return new Intl.DateTimeFormat('sv-SE', { // sv-SE has a practical format
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).format(date).replace(/\s+/g, '_').replace(/:/g, '.')
 }
 
 const $ = id => document.getElementById(id);
