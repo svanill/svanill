@@ -485,7 +485,7 @@ function willRequestEncryption(plaintext) {
     const salt = window.getRandomHexString(16)
     const optionsPBKDF2 = {
         salt,
-        iterations: getPBKDF2Iterations(),
+        iterations: PBKDF2_ITERATIONS,
     };
 
     return willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
@@ -515,8 +515,6 @@ function makeDateTimePrefix(date) {
 const $ = id => document.getElementById(id);
 const setValueAt = (id, value) => $(id).value = value;
 const getValueAt = (id) => $(id).value;
-
-const getPBKDF2Iterations = () => PBKDF2_ITERATIONS;
 
 const pushErrorToDisplayQueue = (e) => {
     const errorMessage = e.message || e.name || 'Unknown error';
