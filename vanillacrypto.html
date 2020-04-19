@@ -328,34 +328,21 @@ function getRandomHexString(length) {
     return bufToHex(array).slice(0, length);
 }
 
-async function willGenerateKeyPBKDF2(secret) {
-    if (!secret) {
-        // Firefox doesn't allow it, Chrome does. Let's make it consistent.
-        throw new GenerateKeyError('Cannot generate a key using an empty secret');
-    }
-
+async function willGenerateKey(secret, {saltString, iterations}) {
     try {
-        return await crypto.subtle.importKey(
+        const baseKey = await crypto.subtle.importKey(
             'raw',
             stringToUint8Array(secret),
             { name: 'PBKDF2' },
             false, // whether the key can be extracted or not
             [ 'deriveKey' ]
         );
-    } catch (e) {
-        throw new GenerateKeyError(e.message || e.name);
-    }
-}
 
-class GenerateKeyError extends Error {};
-
-async function willDeriveKey(baseKey, {saltString, iterations}) {
-    try {
-        return await crypto.subtle.deriveKey(
+        return crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
                 salt: stringToUint8Array(saltString),
-                iterations: iterations,
+                iterations,
                 hash: 'SHA-256'
             },
             baseKey,
@@ -364,11 +351,11 @@ async function willDeriveKey(baseKey, {saltString, iterations}) {
             [ "encrypt", "decrypt" ]
         );
     } catch (e) {
-        throw new DeriveKeyError(e.message || e.name);
+        throw new GenerateKeyError(e.message || e.name);
     }
 }
 
-class DeriveKeyError extends Error {};
+class GenerateKeyError extends Error {};
 
 /**
  * Encrypt text using 256 AES in GCM mode, deriving the key with PBKDF2.
@@ -401,12 +388,11 @@ class DeriveKeyError extends Error {};
  * >>>     },
  * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
  * >>> ).then(function (result) {
- * >>>     console.log(result); // abc.def.ghi
+ * >>>     console.log(result); // abc.def
  * >>> });
  */
 async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
-    const baseKey = await willGenerateKeyPBKDF2(secret);
-    const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
+    const derivedKey = await willGenerateKey(secret, optionsPBKDF2);
     const b_ad = stringToUint8Array(JSON.stringify({
         opt_pbkdf2: optionsPBKDF2,
         iv: bufToHex(b_iv),
@@ -459,8 +445,7 @@ async function willDecryptCiphertext(encryptedBox, secret) {
         iterations: (additionalData.opt_pbkdf2 || {}).iterations || 1,
     };
 
-    const baseKey = await willGenerateKeyPBKDF2(secret);
-    const derivedKey = await willDeriveKey(baseKey, optionsPBKDF2);
+    const derivedKey = await willGenerateKey(secret, optionsPBKDF2);
     const b_dec = await crypto_subtle_decrypt_exceptional(
         {
             name: 'AES-GCM',
