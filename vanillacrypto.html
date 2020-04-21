@@ -322,7 +322,7 @@ function getRandomHexString(length) {
     return bufToHex(array).slice(0, length);
 }
 
-async function willGenerateKey(secret, {saltString, iterations}) {
+async function willGenerateKey(secret, b_salt, iterations) {
     try {
         const baseKey = await crypto.subtle.importKey(
             'raw',
@@ -335,7 +335,7 @@ async function willGenerateKey(secret, {saltString, iterations}) {
         return crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
-                salt: stringToUint8Array(saltString),
+                salt: b_salt,
                 iterations,
                 hash: 'SHA-256'
             },
@@ -356,9 +356,8 @@ class GenerateKeyError extends Error {};
  *
  * @param string plaintext the text to encrypt
  * @param string secret the secret to use to derive the key with PBKDF2
- * @param array optionsPBKDF2
- *              - string salt use it to prevent dictionary attacks
- *              - number iterations the number of PBKDF2 iterations to derive the key
+ * @param arrayBuffer b_salt salt, use it to prevent dictionary attacks
+ * @param number iterations the number of PBKDF2 iterations to derive the key
  * @param arrayBuffer b_iv a nonce to use in AES-GCM
  * @return Promise that will resolve to our encrypted box format.
  *
@@ -369,26 +368,24 @@ class GenerateKeyError extends Error {};
  * decode the ciphertext, minus the key.
  * It has the following format:
  *   {
- *     "opt_pbkdf2": { "salt": "<some salt>", "iterations": <some number> },
+ *     "opt_pbkdf2": { "salt": "<some salt, base64>", "iterations": <some number> },
  *     "iv": "iv, as hex",
  *   }
  *
  * >>> willEncryptPlaintext(
  * >>>     'the text to encrypt',
- * >>>     'your strong secret',
- * >>>     {
- * >>>         salt: 'string to make your key unique even if your secret was more common than you thought',
- * >>>         iterations: 60000,
- * >>>     },
+ * >>>     'your strong password',
+ * >>>     new Uint8Array([0,1,...,16]), // salt, preferably 128 bit
+ * >>>     60000, // iterations to derive the key
  * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
  * >>> ).then(function (result) {
  * >>>     console.log(result); // abc.def
  * >>> });
  */
-async function willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv) {
-    const derivedKey = await willGenerateKey(secret, optionsPBKDF2);
+async function willEncryptPlaintext(plaintext, secret, b_salt, iterations, b_iv) {
+    const derivedKey = await willGenerateKey(secret, b_salt, iterations);
     const b_ad = stringToUint8Array(JSON.stringify({
-        opt_pbkdf2: optionsPBKDF2,
+        opt_pbkdf2: { salt: u_btoa(b_salt), iterations },
         iv: bufToHex(b_iv),
     }));
 
@@ -425,8 +422,7 @@ class SubtleDecryptError extends Error {};
  * @param string ciphertext the text to decrypt, as produced by willEncryptPlaintext
  * @param string secret the secret to use to derive the key with PBKDF2
  *
- * @return Promise that will resolve to an object with format {plaintext,
- * additionalData, iv}
+ * @return Promise that will resolve to an object with format {plaintext, additionalData, iv}
  */
 async function willDecryptCiphertext(encryptedBox, secret) {
     const [b64_ad = '', b64_enc = ''] = encryptedBox.split('.');
@@ -434,12 +430,10 @@ async function willDecryptCiphertext(encryptedBox, secret) {
     const additionalData = json_parse_exceptional(bufferToString(b_ad));
     const b_iv = hexToBuf(additionalData.iv);
 
-    const optionsPBKDF2 = {
-        salt: (additionalData.opt_pbkdf2 || {}).salt || '',
-        iterations: (additionalData.opt_pbkdf2 || {}).iterations || 1,
-    };
+    const b_salt = u_atob((additionalData.opt_pbkdf2 || {}).salt || '');
+    const iterations = (additionalData.opt_pbkdf2 || {}).iterations || 1;
 
-    const derivedKey = await willGenerateKey(secret, optionsPBKDF2);
+    const derivedKey = await willGenerateKey(secret, b_salt, iterations);
     const b_dec = await crypto_subtle_decrypt_exceptional(
         {
             name: 'AES-GCM',
@@ -461,13 +455,9 @@ function willRequestEncryption(plaintext) {
     if (!plaintext) return '';
     const secret = getValueAt('secret');
     const b_iv = window.crypto.getRandomValues(new Uint8Array(12));
-    const salt = window.getRandomHexString(16)
-    const optionsPBKDF2 = {
-        salt,
-        iterations: PBKDF2_ITERATIONS,
-    };
+    const b_salt = window.crypto.getRandomValues(new Uint8Array(16));
 
-    return willEncryptPlaintext(plaintext, secret, optionsPBKDF2, b_iv);
+    return willEncryptPlaintext(plaintext, secret, b_salt, PBKDF2_ITERATIONS, b_iv);
 }
 
 function triggerDownloadDialog(blob, filename) {
