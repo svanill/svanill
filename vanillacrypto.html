@@ -290,14 +290,8 @@ button.action {
 const $ = id => document.getElementById(id);
 const setValueAt = (id, value) => $(id).value = value;
 const getValueAt = (id) => $(id).value;
-
-function stringToUint8Array(text) {
-    return new TextEncoder().encode(text);
-}
-
-function bufToString(arr) {
-    return new TextDecoder().decode(arr);
-}
+const stringToUint8Array = text => new TextEncoder().encode(text);
+const bufferToString = buffer => new TextDecoder().decode(buffer);
 
 function atob_exceptional(ascii) {
     try { return atob(ascii); }
@@ -437,7 +431,7 @@ class SubtleDecryptError extends Error {};
 async function willDecryptCiphertext(encryptedBox, secret) {
     const [b64_ad = '', b64_enc = ''] = encryptedBox.split('.');
     const [b_ad, b_enc] = [b64_ad, b64_enc].map(u_atob);
-    const additionalData = json_parse_exceptional(bufToString(b_ad));
+    const additionalData = json_parse_exceptional(bufferToString(b_ad));
     const b_iv = hexToBuf(additionalData.iv);
 
     const optionsPBKDF2 = {
@@ -457,7 +451,7 @@ async function willDecryptCiphertext(encryptedBox, secret) {
     );
 
     return {
-        plaintext: bufToString(b_dec),
+        plaintext: bufferToString(b_dec),
         additionalData,
         iv: b_iv,
     };
