@@ -496,8 +496,8 @@ const discardLatestError = () => {
 const displayErrorBanner = () => {
     const errorMessage = ERRORS_QUEUE.slice(-1)[0];
     $('error-bar').classList.remove('bump');
-    window.requestAnimationFrame(() => $('error-bar').classList.add('bump'));
     $('error-bar').innerText = errorMessage || '';
+    window.requestAnimationFrame(() => $('error-bar').classList.add('bump'));
 };
 
 const toggleOverlay = (isVisible) => {
