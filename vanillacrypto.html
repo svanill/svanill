@@ -18,16 +18,17 @@ const ERRORS_QUEUE = [];
 <style>
 
 :root {
-  --main-bg-color: #32393F;
-  --main-fg-color: rgb(194, 196, 198);
-  --secondary-bg-color: #033649;
-  --highlight-color: #696969;
-  --secondary-fg-color: #CDB380;
+  --main-bg-color: #141520;
+  --main-fg-color: #ffffff;
+  --secondary-bg-color: #354462;
+  --highlight-color: #7995c0;
+  --secondary-fg-color: #d3d4dc;
+  --extra-color: #d29966;
   --warning-color: #ffcc00;
-  --error-color: #cc3300;
+  --error-color: #a92a00;
   --font-default: Verdana, Geneva, Tahoma, sans-serif;
-  --font-mono: Andale Mono, AndaleMono, Consolas, Monaco, monospace;
-  --font-textarea: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  --font-mono: "Andale Mono", AndaleMono, Consolas, Monaco, monospace;
+  --font-textarea: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 html {
@@ -84,7 +85,7 @@ textarea, button {
 }
 
 #ciphertext-error-bar {
-    color: var(--warning-color);
+    color: var(--error-color);
 }
 
 span.error:empty:before {
@@ -98,12 +99,17 @@ span.error:empty:before {
 button {
     font-weight:bold;
     cursor: pointer;
+    color: var(--main-bg-color);
+}
+
+button:disabled {
+    opacity: 0.5;
 }
 
 textarea {
   flex: 1 1 100%;
   min-height: 70vh; /* effective on narrow windows when textareas reflow */
-  background: none repeat scroll 0 0 rgba(0, 0, 0, 0.07);
+  background-color: var(--secondary-bg-color);
   border-radius: 6px;
   border-style: none solid solid none;
   border-width: medium 1px 1px medium;
@@ -117,14 +123,14 @@ textarea {
 }
 
 textarea:focus {
-    background: none repeat scroll 0 0 var(--main-fg-color);
+    background-color: var(--secondary-fg-color);
     color: var(--main-bg-color);
     outline-width: 0;
 }
 
 textarea::placeholder {
     font-weight: bold;
-    color: var(--main-fg-color);
+    color: var(--secondary-fg-color);
     opacity: 1;
     font-family: var(--font-textarea);
 }
@@ -179,16 +185,16 @@ button.action {
 
 .action-bar .title {
     font-weight: bold;
-    color: #af9f88;
-    text-shadow: 0 0 33px black;
+    color: var(--extra-color);
+    text-shadow: 0 0 33px var(--main-bg-color);
     font-size: 1.3em;
     margin: 0 0.2em 0.2em 0;
 }
 
 #error-bar {
     line-height: 1.5em;
-    background-color: white;
-    color: black;
+    background-color: var(--main-fg-color);
+    color: var(--main-bg-color);
     text-align: center;
     position: fixed;
     top: 0;
