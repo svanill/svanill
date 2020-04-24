@@ -76,7 +76,7 @@ textarea, button {
     display: flex;
     flex: 1 1 50%;
     flex-direction: column;
-    min-width: 360px;
+    min-width: 280px;
     margin-top: 1em;
 }
 
@@ -84,8 +84,9 @@ textarea, button {
     font-family: var(--font-mono);
 }
 
-#ciphertext-error-bar {
+#ciphertext-error-bar:not(:empty) {
     color: var(--error-color);
+    margin-bottom: 5px;
 }
 
 span.error:empty:before {
@@ -174,7 +175,7 @@ textarea:focus::placeholder {
     width: 100%;
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     flex-wrap: wrap;
     margin-bottom: 0.5em;
 }
@@ -194,12 +195,26 @@ button.action {
 #error-bar {
     line-height: 1.5em;
     background-color: var(--main-fg-color);
-    color: var(--main-bg-color);
+    color: var(--main-fg-color);
     text-align: center;
     position: fixed;
     top: 0;
     width: 100%;
-    cursor: pointer;
+}
+
+input:focus,
+button:focus,
+#error-bar:not(:empty):focus {
+    outline: 2px solid rgb(53, 132, 228);
+    -moz-outline-radius: 8px;
+}
+
+input[type=text], input[type=password] {
+    border-color: transparent;
+    border-width: 0 8px;
+    border-radius: 2px;
+    padding: 1px;
+    height: 32px;
 }
 
 #error-bar.bump {
@@ -245,7 +260,7 @@ button.action {
 </head>
 <body spellcheck="false" class="require-login enable-external-actions" onload="onPageLoaded()">
 
-<form id="login-form" class="page-load">
+<form id="login-form" class="page-load" role="form">
     <label class="login-label" for="username">Username (optional)</label>
     <input id="username" type="text"
         title="The optional username allows you to access an external service (to upload/sync your files)"
@@ -261,12 +276,12 @@ button.action {
         class="login-text"
         required=""
         autocomplete="new-password" />
-    <button id="login-btn" type="submit" disabled="disabled" autocomplete="off">Unlock</button>
+    <button id="login-btn" type="submit" disabled="disabled" autocomplete="off" tabindex="0">Unlock</button>
 </form>
 
 <button id="logout-btn">Logout</button>
 
-<main class="main-container">
+<main class="main-container" role="main">
 
 <div class="plaintext-container">
     <p class="action-bar"><label class="title" for="plaintext">Cleartext</label> <button id="download-cleartext" class="action">⬇ download</button></p>
@@ -961,7 +976,7 @@ function onPageLoaded() {
     $('reload-ciphertext').addEventListener('click', onReloadCiphertextButtonClicked);
     $('upload-ciphertext').addEventListener('click', onUploadCiphertextButtonClicked);
 
-    const isSecretConfirmed = () => getValueAt('confirm-secret') === getValueAt('secret');
+    const isSecretConfirmed = () => getValueAt('confirm-secret') === getValueAt('secret') && getValueAt('secret');
     $('confirm-secret').addEventListener('input', () => { $('login-btn').disabled = !isSecretConfirmed() ; });
     $('secret'        ).addEventListener('input', () => { $('login-btn').disabled = !isSecretConfirmed() ; });
 
