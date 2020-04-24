@@ -193,6 +193,7 @@ button.action {
 }
 
 #error-bar {
+    display: none;
     line-height: 1.5em;
     background-color: var(--main-fg-color);
     color: var(--main-fg-color);
@@ -218,16 +219,9 @@ input[type=text], input[type=password] {
 }
 
 #error-bar.bump {
+    display: block;
     transition: background-color 0.5s ease;
     background-color: var(--error-color);
-}
-
-#error-bar:not(:empty)::after {
-    content: "x";
-    position: absolute;
-    right: 0.5em;
-    font-family: var(--font-mono);
-    font-weight: bold;
 }
 
 #overlay {
@@ -259,6 +253,11 @@ input[type=text], input[type=password] {
 </style>
 </head>
 <body spellcheck="false" class="require-login enable-external-actions" onload="onPageLoaded()">
+
+<p id="error-bar" role="alert" aria-atomic="true" tabindex="0">
+    <button id="error-bar-btn" onClick="discardLatestError()" style="float:right">Dismiss</button>
+    <span id="error-bar-text"></span>
+</p>
 
 <form id="login-form" class="page-load" role="form">
     <label class="login-label" for="username">Username (optional)</label>
@@ -302,7 +301,6 @@ input[type=text], input[type=password] {
 </div>
 </main>
 
-<p id="error-bar" role="alert" aria-atomic="true"></p>
 <div id="overlay" class="is-hidden"><div id="spinner"></div></div>
 <a id="download-dialog-anchor" href="" style="display:none"></a>
 
@@ -515,10 +513,9 @@ const discardLatestError = () => {
 };
 
 const displayErrorBanner = () => {
-    const errorMessage = ERRORS_QUEUE.slice(-1)[0];
     $('error-bar').classList.remove('bump');
-    $('error-bar').innerText = errorMessage || '';
-    window.requestAnimationFrame(() => $('error-bar').classList.add('bump'));
+    $('error-bar-text').innerText = ERRORS_QUEUE.slice(-1)[0] || '';
+    $('error-bar-text').innerText && window.requestAnimationFrame(() => $('error-bar').classList.add('bump'));
 };
 
 const toggleOverlay = (isVisible) => {
@@ -979,8 +976,6 @@ function onPageLoaded() {
     const isSecretConfirmed = () => getValueAt('confirm-secret') === getValueAt('secret') && getValueAt('secret');
     $('confirm-secret').addEventListener('input', () => { $('login-btn').disabled = !isSecretConfirmed() ; });
     $('secret'        ).addEventListener('input', () => { $('login-btn').disabled = !isSecretConfirmed() ; });
-
-    $('error-bar').addEventListener('click', (ev) => discardLatestError());
 
     $('login-form').addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
     $('logout-btn').addEventListener('click', () => { document.location.reload(); });
