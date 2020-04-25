@@ -80,8 +80,12 @@ textarea, button {
     margin-top: 1em;
 }
 
-#ciphertext {
+#ciphertext:not(:placeholder-shown) {
     font-family: var(--font-mono);
+    /* The rest is to not display newlines (it's just better to see) */
+    word-break: break-all;
+    white-space: normal;
+    word-spacing: -9px;
 }
 
 #ciphertext-error-bar:not(:empty) {
@@ -520,7 +524,8 @@ const setCiphertextError = (errorMessage) => {
 
 const encryptPlaintextAndSetCiphertext = async function() {
     try {
-        const ciphertext = await willRequestEncryption(getValueAt('plaintext'));
+        let ciphertext = await willRequestEncryption(getValueAt('plaintext'));
+        ciphertext = ciphertext.replace(/(.{1,78})/g,'$1\n').trim(); // add a newline every 78 chars
         setValueAt('ciphertext', ciphertext);
         setCiphertextError('');
     } catch (e) {
