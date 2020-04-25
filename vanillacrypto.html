@@ -556,11 +556,10 @@ async function updatePlaintextFromCiphertext() {
     };
 }
 
-async function onDownloadCiphertextButtonClicked(ev) {
+function onDownloadCiphertextButtonClicked(ev) {
     ev.preventDefault();
 
-    const encryptedBox = await willRequestEncryption(getValueAt('plaintext'));
-    const blob = new Blob([encryptedBox], {type: "plain/text"});
+    const blob = new Blob([getValueAt('ciphertext')], {type: "plain/text"});
     const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
 
     triggerDownloadDialog(blob, filename);
@@ -708,7 +707,7 @@ async function onUploadCiphertextButtonClicked(ev) {
     toggleOverlay(true);
 
     try {
-        const ciphertext = await willRequestEncryption(getValueAt('plaintext')); // XXX this way we upload something different from what the user sees !!!!
+        const ciphertext = getValueAt('ciphertext'); // Make a copy to prevent changes
         const { uploadUrl, uploadFormData, retrieveUrl } = await willRequestUploadUrl(filename);
         if (uploadUrl.slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
             throw new Error('The server proposed to upload the file to an untrusted url!');
