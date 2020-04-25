@@ -380,45 +380,36 @@ class GenerateKeyError extends Error {};
  * @param arrayBuffer b_iv a nonce to use in AES-GCM
  * @return Promise that will resolve to our encrypted box format.
  *
- * The encrypted box is formed by 2 base64 encoded parts (additional data,
- * ciphertext), separated by a dot.
- *
- * The additional data is a JSON object containing everything required to
- * decode the ciphertext, minus the key.
- * It has the following format:
- *   {
- *     "opt_pbkdf2": { "salt": "<some salt, base64>", "iterations": <some number> },
- *     "iv": "iv, as hex",
- *   }
+ * The encrypted box follows this format <iterations>.<iv>.<salt>-<ciphertext>
+ * where every element is base64 encoded.
  *
  * >>> willEncryptPlaintext(
  * >>>     'the text to encrypt',
  * >>>     'your strong password',
- * >>>     new Uint8Array([0,1,...,16]), // salt, preferably 128 bit
+ * >>>     new Uint8Array([0,1,...,15]), // salt, preferably 128 bit
  * >>>     60000, // iterations to derive the key
  * >>>     new Uint8Array([0,1,...,11]) // 96 bit nonce
  * >>> ).then(function (result) {
- * >>>     console.log(result); // abc.def
+ * >>>     console.log(result); // iterations.iv.salt-ciphertext
  * >>> });
  */
 async function willEncryptPlaintext(plaintext, secret, b_salt, iterations, b_iv) {
     const derivedKey = await willGenerateKey(secret, b_salt, iterations);
-    const b_ad = stringToUint8Array(JSON.stringify({
-        opt_pbkdf2: { salt: u_btoa(b_salt), iterations },
-        iv: bufToHex(b_iv),
-    }));
+    const dv_iterations = new DataView(new ArrayBuffer(4)) // hold up to 4 * 8 (2**32) bit
+    dv_iterations.setUint32(0, iterations)
+    const ad = [dv_iterations.buffer, b_iv, b_salt].map(u_btoa).join('.');
 
     const b_enc = await crypto.subtle.encrypt(
         {
             name: 'AES-GCM',
             iv: b_iv,
-            additionalData: b_ad,
+            additionalData: stringToUint8Array(ad),
         },
         derivedKey,
         stringToUint8Array(plaintext)
     );
 
-    return u_btoa(b_ad) + '.' + u_btoa(b_enc);
+    return ad + '-' + u_btoa(b_enc);
 }
 
 function json_parse_exceptional(string) {
@@ -444,20 +435,17 @@ class SubtleDecryptError extends Error {};
  * @return Promise that will resolve to an object with format {plaintext, additionalData, iv}
  */
 async function willDecryptCiphertext(encryptedBox, secret) {
-    const [b64_ad = '', b64_enc = ''] = encryptedBox.split('.');
-    const [b_ad, b_enc] = [b64_ad, b64_enc].map(u_atob);
-    const additionalData = json_parse_exceptional(bufferToString(b_ad));
-    const b_iv = hexToBuf(additionalData.iv);
-
-    const b_salt = u_atob((additionalData.opt_pbkdf2 || {}).salt || '');
-    const iterations = (additionalData.opt_pbkdf2 || {}).iterations || 1;
+    const [ad = '', b64_enc = ''] = encryptedBox.split('-');
+    const b_enc = u_atob(b64_enc);
+    const [b_iterations, b_iv, b_salt] = ad.split('.').map(u_atob);
+    const iterations = new DataView(b_iterations.buffer).getUint32();
 
     const derivedKey = await willGenerateKey(secret, b_salt, iterations);
     const b_dec = await crypto_subtle_decrypt_exceptional(
         {
             name: 'AES-GCM',
             iv: b_iv,
-            additionalData: b_ad,
+            additionalData: stringToUint8Array(ad),
         },
         derivedKey,
         b_enc
@@ -465,7 +453,7 @@ async function willDecryptCiphertext(encryptedBox, secret) {
 
     return {
         plaintext: bufferToString(b_dec),
-        additionalData,
+        additionalData: ad,
         iv: b_iv,
     };
 }
@@ -475,8 +463,9 @@ function willRequestEncryption(plaintext) {
     const secret = getValueAt('secret');
     const b_iv = window.crypto.getRandomValues(new Uint8Array(12));
     const b_salt = window.crypto.getRandomValues(new Uint8Array(16));
+    const iterations = PBKDF2_ITERATIONS;
 
-    return willEncryptPlaintext(plaintext, secret, b_salt, PBKDF2_ITERATIONS, b_iv);
+    return willEncryptPlaintext(plaintext, secret, b_salt, iterations, b_iv);
 }
 
 function triggerDownloadDialog(blob, filename) {
