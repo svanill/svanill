@@ -331,20 +331,6 @@ function u_btoa(buffer) {
     return btoa(Array.prototype.map.call(new Uint8Array(buffer), (v,i,a) => String.fromCharCode(v)).join(''));
 }
 
-function bufToHex(buffer) {
-    return new Uint8Array(buffer).reduce((a, b) => a + ('0' + b.toString(16)).slice(-2), '');
-}
-
-function hexToBuf(text) {
-    return new Uint8Array(text.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-}
-
-function getRandomHexString(length) {
-    const array = new Uint8Array(Math.ceil(length/2));
-    window.crypto.getRandomValues(array);
-    return bufToHex(array).slice(0, length);
-}
-
 async function willGenerateKey(secret, b_salt, iterations) {
     try {
         const baseKey = await crypto.subtle.importKey(
@@ -592,8 +578,8 @@ async function _willGetAuthToken(username, secret) {
                 throw new Error('Cannot proceed');
             }
 
-            const answer = getRandomHexString(32);
-            const challenge = await willRequestEncryption(answer);
+            const answer = window.crypto.getRandomValues(new Uint8Array(32));
+            const challenge = u_btoa(await willRequestEncryption(answer));
             return (await willCreateNewUser(username, answer, challenge)).content.token;
         } else if (e instanceof SubtleDecryptError) {
             throw new Error('The password is not correct');
@@ -690,10 +676,16 @@ class CannotAnswerChallengeError extends Error {
     }
 }
 
+function getRandomLowercaseString(length) {
+    const array = new Uint8Array(length);
+    window.crypto.getRandomValues(array);
+    return bufferToString(array.map(x => x % 25 + 97))
+}
+
 const getFilenameOrDefault = (() => {
     let _filename = null;
     return ((defaultFilename) => {
-        _filename = _filename || defaultFilename || getRandomHexString(32);
+        _filename = _filename || defaultFilename || getRandomLowercaseString(32);
         return _filename;
     });
 })();
