@@ -4,7 +4,7 @@ import VanillaCryptoPage from './page_object';
 const page = new VanillaCryptoPage();
 
 fixture `Open main page`
-    .page `file://${__dirname}/../../vanillacrypto.html?salt=x`;
+    .page `file://${__dirname}/../../svanill.html`;
 
 test('Login form submit button change status when the secrets changes', async t => {
 

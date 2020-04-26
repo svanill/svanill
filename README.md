@@ -1,7 +1,7 @@
 Svanill
 =============
 
-An easily auditable html page to manage your sensitive data.
+An easily auditable tool to encrypt/decrypt your sensitive data.
 
 One file, no dependencies. If you trust the browser internals you just have to audit this file.
 
@@ -85,7 +85,7 @@ Requires to keep around a gpg private key. No official/audited Android applicati
 License
 =======
 
-Vanillacrypto, a tool to encrypt/decrypt sensitive data.
+Svanill, an easily auditable tool to encrypt/decrypt your sensitive data.
 Copyright (C) 2017 Riccardo Attilio Galli
 
 This program is free software: you can redistribute it and/or modify

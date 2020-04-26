@@ -1,10 +1,11 @@
 {
-  "name": "vanillacrypto",
+  "name": "svanill",
   "version": "1.0.0",
   "main": "index.js",
   "repository": "git@bitbucket.org:riquito/vanillacrypto.git",
   "author": "Riccardo Attilio Galli <riccardo@sideralis.org>",
   "license": "AGPL-3.0",
+  "private": true,
   "devDependencies": {
     "jasmine": "^2.7.0",
     "karma": "^2.0.0",

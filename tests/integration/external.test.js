@@ -4,7 +4,7 @@ import VanillaCryptoPage from './page_object';
 const page = new VanillaCryptoPage();
 
 fixture `Open main page`
-    .page `file://${__dirname}/../../vanillacrypto.html?salt=x&upload_base_url=http://s3like.com:9000/`
+    .page `file://${__dirname}/../../svanill.html?upload_base_url=http://s3like.com:9000/`
     .beforeEach( async t => {
         await t.setNativeDialogHandler((type, text, url) => {
             switch (type) {
