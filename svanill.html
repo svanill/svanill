@@ -9,7 +9,7 @@
 // Iteration count for PBKDF2 (the higher the value the longer it will take to derive the key).
 const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations') || 100000;
 // Url to an optional external service to send/reload encrypted data
-const STORE_URL = 'http://localhost:5000';
+const STORE_URL = 'https://api.svanill.com';
 // Prefix you expect in the proposed urls you're given to upload to (use the empty string to allow all).
 // End it with slash '/' to block malicious urls (otherwise e.g. 'foo.com' would allow 'foo.comicly.broken')
 const TRUSTED_UPLOAD_BASE_URL = new URLSearchParams(document.location.search).get('upload_base_url')
