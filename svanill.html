@@ -573,8 +573,8 @@ async function _willGetAuthToken(username, secret) {
                 throw new Error('Cannot proceed');
             }
 
-            const answer = window.crypto.getRandomValues(new Uint8Array(16));
-            const challenge = bufToHex(await willRequestEncryption(answer));
+            const answer = bufToHex(window.crypto.getRandomValues(new Uint8Array(16)));
+            const challenge = await willRequestEncryption(answer);
             return (await willCreateNewUser(username, answer, challenge)).content.token;
         } else if (e instanceof SubtleDecryptError) {
             throw new Error('The password is not correct');
