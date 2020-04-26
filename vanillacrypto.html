@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Vanillacrypto</title>
+<title>Svanill</title>
+<meta name="description" content="Svanill, an easily auditable tool to manage your sensitive data" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script>
 // Iteration count for PBKDF2 (the higher the value the longer it will take to derive the key).
@@ -546,7 +547,7 @@ function onDownloadCiphertextButtonClicked(ev) {
     ev.preventDefault();
 
     const blob = new Blob([getValueAt('ciphertext')], {type: "plain/text"});
-    const filename = makeDateTimePrefix(new Date()) + '_encrypted_vanillacrypto.txt';
+    const filename = makeDateTimePrefix(new Date()) + '_encrypted_svanill.txt';
 
     triggerDownloadDialog(blob, filename);
 }
@@ -555,7 +556,7 @@ function onDownloadCleartextButtonClicked(ev) {
     ev.preventDefault();
 
     const blob = new Blob([getValueAt('plaintext')], {type: "plain/text"});
-    const filename = makeDateTimePrefix(new Date()) + '_cleartext_vanillacrypto.txt';
+    const filename = makeDateTimePrefix(new Date()) + '_cleartext_svanill.txt';
 
     triggerDownloadDialog(blob, filename);
 }
