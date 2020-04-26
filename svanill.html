@@ -411,8 +411,7 @@ class SubtleDecryptError extends Error {};
  *
  * @param string ciphertext the text to decrypt, as produced by willEncryptPlaintext
  * @param string secret the secret to use to derive the key with PBKDF2
- *
- * @return Promise that will resolve to an object with format {plaintext, additionalData, iv}
+ * @return Promise<string> the plaintext
  */
 async function willDecryptCiphertext(encryptedBox, secret) {
     encryptedBox = encryptedBox.replace(/\s/g, '') // remove spaces/newlines
@@ -439,11 +438,7 @@ async function willDecryptCiphertext(encryptedBox, secret) {
         b_enc
     );
 
-    return {
-        plaintext: bufferToString(b_dec),
-        additionalData: encryptedBox.slice(0, 64),
-        iv: b_iv,
-    };
+    return bufferToString(b_dec);
 }
 
 function willRequestEncryption(plaintext) {
@@ -525,8 +520,7 @@ async function updatePlaintextFromCiphertext() {
         let plaintext = '';
 
         if (ciphertext) {
-            const result = await willDecryptCiphertext(ciphertext, secret);
-            plaintext = result.plaintext;
+            plaintext = await willDecryptCiphertext(ciphertext, secret);
         }
 
         setValueAt('plaintext', plaintext);
@@ -621,8 +615,7 @@ async function willRequestChallenge(username) {
 class UserDoesNotExistError extends Error {}
 
 async function willAnswerChallenge(username, secret, challenge) {
-    const answerBox = await willDecryptCiphertext(challenge, secret);
-    const answer = answerBox.plaintext;
+    const answer = await willDecryptCiphertext(challenge, secret);
 
     const url = new URL(STORE_URL + '/auth/answer-challenge');
     const parsedResponse = await fetchJSONWithRetryOnAuthExpired(url.href, {
