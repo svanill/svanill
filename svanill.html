@@ -8,6 +8,8 @@
 <script>
 // Iteration count for PBKDF2 (the higher the value the longer it will take to derive the key).
 const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations') || 100000;
+// When decrypting we use the iterations number found in the encrypted box. We set an hard limit to block DoS attacks.
+const PBKDF2_MAX_ITERATIONS = PBKDF2_ITERATIONS;
 // Url to an optional external service to send/reload encrypted data
 const STORE_URL = 'https://api.svanill.com';
 // Prefix you expect in the proposed urls you're given to upload to (use the empty string to allow all).
@@ -317,19 +319,13 @@ const getValueAt = (id) => $(id).value;
 const stringToUint8Array = text => new TextEncoder().encode(text);
 const bufferToString = buffer => new TextDecoder().decode(buffer);
 
-function atob_exceptional(ascii) {
-    try { return atob(ascii); }
-    catch (e) { throw new Base64DecodeError(); }
+function bufToHex(buffer) {
+    return new Uint8Array(buffer).reduce((a, b) => a + ('0' + b.toString(16)).slice(-2), '');
 }
 
-class Base64DecodeError extends Error {};
-
-function u_atob(ascii) {
-    return Uint8Array.from(atob_exceptional(ascii), c => c.charCodeAt(0));
-}
-
-function u_btoa(buffer) {
-    return btoa(Array.prototype.map.call(new Uint8Array(buffer), (v,i,a) => String.fromCharCode(v)).join(''));
+function hexToBuf(text) {
+    if (!text) { return new Uint8Array(0); }
+    return new Uint8Array(text.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 }
 
 async function willGenerateKey(secret, b_salt, iterations) {
@@ -388,7 +384,7 @@ async function willEncryptPlaintext(plaintext, secret, b_salt, iterations, b_iv)
     const derivedKey = await willGenerateKey(secret, b_salt, iterations);
     const dv_iterations = new DataView(new ArrayBuffer(4)) // hold up to 4 * 8 (2**32) bit
     dv_iterations.setUint32(0, iterations)
-    const ad = [dv_iterations.buffer, b_iv, b_salt].map(u_btoa).join('.');
+    const ad = [dv_iterations.buffer, b_iv, b_salt].map(bufToHex).join('');
 
     const b_enc = await crypto.subtle.encrypt(
         {
@@ -400,19 +396,12 @@ async function willEncryptPlaintext(plaintext, secret, b_salt, iterations, b_iv)
         stringToUint8Array(plaintext)
     );
 
-    return ad + '-' + u_btoa(b_enc);
+    return ad + bufToHex(b_enc);
 }
-
-function json_parse_exceptional(string) {
-    try { return JSON.parse(string); }
-    catch (e) { throw new JSONDecodeError(); }
-}
-
-class JSONDecodeError extends Error {};
 
 function crypto_subtle_decrypt_exceptional(algorithm, key, data) {
     return crypto.subtle.decrypt(algorithm, key, data)
-    .catch(e => { throw new SubtleDecryptError(); });
+    .catch(e => { throw new SubtleDecryptError('Password and ciphertext do not match'); });
 }
 
 class SubtleDecryptError extends Error {};
@@ -426,17 +415,25 @@ class SubtleDecryptError extends Error {};
  * @return Promise that will resolve to an object with format {plaintext, additionalData, iv}
  */
 async function willDecryptCiphertext(encryptedBox, secret) {
-    const [ad = '', b64_enc = ''] = encryptedBox.split('-');
-    const b_enc = u_atob(b64_enc);
-    const [b_iterations, b_iv, b_salt] = ad.split('.').map(u_atob);
+    encryptedBox = encryptedBox.replace(/\s/g, '') // remove spaces/newlines
+    const parts = encryptedBox.match(/^(.{8})(.{24})(.{32})(.*)/)
+    if (parts === null) {
+        throw new SubtleDecryptError('Content is too short');
+    }
+    const [b_iterations, b_iv, b_salt, b_enc] = parts.slice(1).map(hexToBuf);
+
     const iterations = new DataView(b_iterations.buffer).getUint32();
+    if (iterations > PBKDF2_MAX_ITERATIONS) {
+        // Use an hardcoded limit to avoid CPU DoS caused by an adversary
+        throw new SubtleDecryptError('The decoded iterations number is dangerously high');
+    }
 
     const derivedKey = await willGenerateKey(secret, b_salt, iterations);
     const b_dec = await crypto_subtle_decrypt_exceptional(
         {
             name: 'AES-GCM',
             iv: b_iv,
-            additionalData: stringToUint8Array(ad),
+            additionalData: stringToUint8Array(encryptedBox.slice(0, 64)),
         },
         derivedKey,
         b_enc
@@ -444,7 +441,7 @@ async function willDecryptCiphertext(encryptedBox, secret) {
 
     return {
         plaintext: bufferToString(b_dec),
-        additionalData: ad,
+        additionalData: encryptedBox.slice(0, 64),
         iv: b_iv,
     };
 }
@@ -534,12 +531,10 @@ async function updatePlaintextFromCiphertext() {
 
         setValueAt('plaintext', plaintext);
     } catch (e) {
-        if (!(e instanceof JSONDecodeError
-            || e instanceof Base64DecodeError
-            || e instanceof SubtleDecryptError)) {
+        if (!(e instanceof SubtleDecryptError)) {
             console.error(e);
         }
-        setCiphertextError('Cannot decrypt, most likely the ciphertext is not correct: focus the cleartext to refresh the ciphertext');
+        setCiphertextError(`${e.message}, cannot decrypt. Focus the cleartext to refresh the ciphertext`);
     };
 }
 
@@ -579,8 +574,8 @@ async function _willGetAuthToken(username, secret) {
                 throw new Error('Cannot proceed');
             }
 
-            const answer = window.crypto.getRandomValues(new Uint8Array(32));
-            const challenge = u_btoa(await willRequestEncryption(answer));
+            const answer = window.crypto.getRandomValues(new Uint8Array(16));
+            const challenge = bufToHex(await willRequestEncryption(answer));
             return (await willCreateNewUser(username, answer, challenge)).content.token;
         } else if (e instanceof SubtleDecryptError) {
             throw new Error('The password is not correct');
