@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script>
 // Iteration count for PBKDF2 (the higher the value the longer it will take to derive the key).
-const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations') || 60000;
+const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations') || 100000;
 // Url to an optional external service to send/reload encrypted data
 const STORE_URL = 'http://localhost:5000';
 // Prefix you expect in the proposed urls you're given to upload to (use the empty string to allow all).
