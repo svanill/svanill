@@ -209,6 +209,8 @@ button.action {
     position: fixed;
     top: 0;
     width: 100%;
+    align-items: center;
+    flex-direction: column;
 }
 
 input:focus,
@@ -227,7 +229,7 @@ input[type=text], input[type=password] {
 }
 
 #error-bar.bump {
-    display: block;
+    display: flex;
     transition: background-color 0.5s ease;
     background-color: var(--error-color);
 }
@@ -263,8 +265,8 @@ input[type=text], input[type=password] {
 <body spellcheck="false" class="require-login enable-external-actions" onload="onPageLoaded()">
 
 <p id="error-bar" role="alert" aria-atomic="true" tabindex="0">
-    <button id="error-bar-btn" onClick="discardLatestError()" style="float:right">Dismiss</button>
     <span id="error-bar-text"></span>
+    <button id="error-bar-btn" onClick="discardLatestError()" style="width:100px;margin-bottom: 3px;">Dismiss</button>
 </p>
 
 <form id="login-form" class="page-load" role="form">
