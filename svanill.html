@@ -418,7 +418,7 @@ class SubtleDecryptError extends Error {};
  */
 async function willDecryptCiphertext(encryptedBox, secret) {
     encryptedBox = encryptedBox.replace(/\s/g, '') // remove spaces/newlines
-    const parts = encryptedBox.match(/^(.{2})(.{8})(.{32})(.{24})(.*)/)
+    const parts = encryptedBox.match(/^(.{2})(.{8})(.{32})(.{24})(.+)/)
     if (parts === null) {
         throw new SubtleDecryptError('Content is too short');
     }
