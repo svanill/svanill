@@ -5,7 +5,7 @@
 <title>Svanill</title>
 <meta name="description" content="Svanill, an easily auditable tool to manage your sensitive data" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<script>
+<script id="setup">
 // Iteration count for PBKDF2 (the higher the value the longer it will take to derive the key).
 const PBKDF2_ITERATIONS = new URLSearchParams(document.location.search).get('iterations') || 100000;
 // When decrypting we use the iterations number found in the encrypted box. We set an hard limit to block DoS attacks.
@@ -341,7 +341,7 @@ async function willGenerateKey(secret, b_salt, iterations) {
             [ 'deriveKey' ]
         );
 
-        return crypto.subtle.deriveKey(
+        return await crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
                 salt: b_salt,

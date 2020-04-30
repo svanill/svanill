@@ -11,13 +11,13 @@ module.exports = function (config) {
         port: 9876,  // karma web server port
         colors: true,
         logLevel: config.LOG_INFO,
-        browsers: ['ChromeHeadless', 'Firefox'],
+        browsers: ['ChromeHeadless', 'FirefoxHeadless'],
         autoWatch: false,
         singleRun: true,
         concurrency: Infinity,
         preprocessors: {
           // keep this as generic as possible since `karma-generic-preprocessor`
-          // has it's own matcher
+          // has its own matcher
           'tests/*': ['generic'],
         },
         genericPreprocessor: {
@@ -26,7 +26,7 @@ module.exports = function (config) {
                     match: "**/*.test.js",
                     process: concatScriptPreProcessor({
                         source: path.join(__dirname, 'svanill.html'),
-                        idList: ['the-script'],
+                        idList: ['setup', 'the-script'],
                         append: false,
                     }),
                 },
