@@ -46,7 +46,7 @@ The key is derived using PBKDF2-HMAC-SHA-256, 100.000 iterations.
 The salt is 16 byte long, generated randomly before any encryption.
 Salt and iterations are not kept secret, they are part of the additional data of the produced ciphertext.
 
-[format diagram](./assets/format_diagram.png)
+![format diagram](./assets/format_diagram.png)
 
 Here I encrypted the text `svanill` using `foobar` as password. Note that this particular password is weak (short and guessable), used just for the sake of example.
 You should [use the longest passphrase](https://en.wikipedia.org/wiki/Password_strength) you are confident to remember (assuming just english letters and digits, it should be at least 14 characters long - around 72 bit of entropy).
