@@ -3,11 +3,11 @@ Svanill
 
 An easily auditable tool to encrypt/decrypt your sensitive data.
 
-One file, no dependencies. If you trust the browser internals you just have to audit this file.
+[One file](./svanill.html), no dependencies. If you trust the browser internals you just have to audit this file.
 
 It's small, you can either use it from [https://svanill.com](https://svanill.com) and review it every time or keep your own copy.
 
-By itself [the main file](./svanill.html) will allow you to encrypt/decrypt data on your device. If you want to keep your encrypted data on an external service you can either use the default [https://svanill.com](https://svanill.com) - the option appear if you provide a username - or host your own server.
+Even without a network connection it will allow you to encrypt/decrypt data on your device. If you want to keep your encrypted data on an external server you can either use the default [https://svanill.com](https://svanill.com) - the option appears if you provide a username - or edit the file and point at your own server.
 
 Goals
 =====
@@ -45,6 +45,11 @@ Content is encrypted using AES-GCM. The size of the iv/nonce is 96 bit, generate
 The key is derived using PBKDF2-HMAC-SHA-256, 100.000 iterations.
 The salt is 16 byte long, generated randomly before any encryption.
 Salt and iterations are not kept secret, they are part of the additional data of the produced ciphertext.
+
+[format diagram](./assets/format_diagram.png)
+
+Here I encrypted the text `svanill` using `foobar` as password. Note that this particular password is weak (short and guessable), used just for the sake of example.
+You should [use the longest passphrase](https://en.wikipedia.org/wiki/Password_strength) you are confident to remember (assuming just english letters and digits, it should be at least 14 characters long - around 72 bit of entropy).
 
 ## Why PBKDF2 instead of Argon2?
 
