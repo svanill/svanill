@@ -3,8 +3,12 @@ import VanillaCryptoPage from './page_object';
 
 const page = new VanillaCryptoPage();
 
+const store_url = 'http://localhost:5000'
+const upload_base_url = 'http://s3like.com:9000/'
+const derive_key_iterations = 2;
+
 fixture `Open main page`
-    .page `file://${__dirname}/../../svanill.html?store_url=http://localhost:5000&upload_base_url=http://s3like.com:9000/`
+    .page `file://${__dirname}/../../svanill.html?store_url=${store_url}&upload_base_url=${upload_base_url}&iterations=${derive_key_iterations}`
     .beforeEach( async t => {
         await t.setNativeDialogHandler((type, text, url) => {
             switch (type) {
@@ -57,9 +61,8 @@ test('When a new user start by clicking reload, textareas should be emptied', as
         .expect(page.getCleartextTextarea().value).eql('', 'cleartext is empty')
         .expect(page.getCiphertextTextarea().value).eql('', 'ciphertext is empty')
         .typeText(page.getCleartextTextarea(), 'soon to be deleted')
-        .click(page.getDownloadCleartextButton())
         .click(page.getReloadCiphertextButton())
-        .expect(page.getCleartextTextarea().value).eql('', { timeout: 500 }, 'cleartext is empty')
+        .expect(page.getCleartextTextarea().value).eql('', { timeout: 1500 }, 'cleartext is empty')
         .expect(page.getCiphertextTextarea().value).eql('', { timeout: 500 }, 'cleartext is empty')
 });
 

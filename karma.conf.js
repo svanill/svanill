@@ -1,12 +1,12 @@
 const path = require('path');
-const concatScriptPreProcessor = require('./tests/concatScriptPreProcessor');
+const concatScriptPreProcessor = require('./tests/unit/concatScriptPreProcessor');
 
 module.exports = function (config) {
     'use strict';
 
     config.set({
         frameworks: ['jasmine', 'sinon'],
-        files: ['tests/main.test.js'],
+        files: ['tests/unit/main.test.js'],
         reporters: ['mocha'],
         port: 9876,  // karma web server port
         colors: true,
@@ -18,7 +18,7 @@ module.exports = function (config) {
         preprocessors: {
           // keep this as generic as possible since `karma-generic-preprocessor`
           // has its own matcher
-          'tests/*': ['generic'],
+          'tests/unit/*': ['generic'],
         },
         genericPreprocessor: {
             rules: [
