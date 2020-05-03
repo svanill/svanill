@@ -4,7 +4,7 @@ import VanillaCryptoPage from './page_object';
 const page = new VanillaCryptoPage();
 
 fixture `Open main page`
-    .page `file://${__dirname}/../../svanill.html?upload_base_url=http://s3like.com:9000/`
+    .page `file://${__dirname}/../../svanill.html?store_url=http://localhost:5000&upload_base_url=http://s3like.com:9000/`
     .beforeEach( async t => {
         await t.setNativeDialogHandler((type, text, url) => {
             switch (type) {
@@ -28,7 +28,7 @@ test('If the user is prompted to create an account and answer "no" an error is d
 
     await t
         .expect(page.getErrorBar().visible).ok()
-        .expect(page.getErrorBar().innerText).eql('Cannot proceed')
+        .expect(page.getErrorBar().innerText).eql('Cannot proceed\nDismiss')
 });
 
 test('Login fails when the external service does not accept the credentials', async t => {
@@ -36,7 +36,7 @@ test('Login fails when the external service does not accept the credentials', as
 
     await t
         .expect(page.getErrorBar().visible).ok()
-        .expect(page.getErrorBar().innerText).eql("Couldn't create the user. Server response was: [1001] Username is not valid")
+        .expect(page.getErrorBar().innerText).eql(`Couldn\'t start authentication. Server response was: [1001] Username should contain only ascii letters, numbers, _, -, max 50 chars)\nDismiss`)
 });
 
 test('If the user is prompted to create an account and answer "yes" the application is displayed', async t => {

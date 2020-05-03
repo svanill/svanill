@@ -16,7 +16,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-sinon": "^1.0.5",
     "sinon": "^4.0",
-    "testcafe": "^0.18.5"
+    "testcafe": "^1.8.4"
   },
   "scripts": {
     "test-unit": "node node_modules/.bin/karma start",

@@ -24,7 +24,7 @@ services:
         ports:
             - "9000:9000"
     web:
-        image: riquito/piggy-store-alpine
+        image: riquito/piggy-store
         ports:
             - "127.0.0.1:5000:5000"
         depends_on:
@@ -51,9 +51,8 @@ services:
         entrypoint: >
             /bin/sh -c "
                 sleep 3;
-                /usr/bin/mc config host add s3likehost http://s3like.com:9000 test_s3_access_key test_s3_secret_key;
-                /usr/bin/mc rm -r --force s3likehost/testbucket 2&>1 > /dev/null;
-                /usr/bin/mc mb s3likehost/testbucket;
-                /usr/bin/mc policy public s3likehost/testbucket;
-                exit 0;
+                mc config host add s3likehost http://s3like.com:9000 test_s3_access_key test_s3_secret_key && \
+                (mc rm -r --force s3likehost/testbucket 2&>1 > /dev/null || true) && \
+                mc mb s3likehost/testbucket && \
+                mc policy set public s3likehost/testbucket \
             "
