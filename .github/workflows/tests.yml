@@ -92,3 +92,10 @@ jobs:
         yarn run setup-e2e-tests
         yarn run test-e2e-network-api-chrome
         yarn run test-e2e-network-api-firefox
+
+    - name: Archive test artifacts
+      if: always()
+      uses: actions/upload-artifact@v1
+      with:
+        name: screenshots
+        path: screenshots
