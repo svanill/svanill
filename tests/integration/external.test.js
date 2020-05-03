@@ -1,4 +1,4 @@
-import { t } from 'testcafe';
+import crypto from 'crypto';
 import VanillaCryptoPage from './page_object';
 
 const page = new VanillaCryptoPage();
@@ -48,6 +48,21 @@ test('If the user is prompted to create an account and answer "yes" the applicat
         .expect(page.getMainContainer().visible).ok()
 });
 
+test('When a new user start by clicking reload, textareas should be emptied', async t => {
+    const newUser = crypto.randomBytes(20).toString('hex')
+    await page.loginExt(newUser)
+    await page.focus(page.getCleartextTextarea())
+
+    await t
+        .expect(page.getCleartextTextarea().value).eql('', 'cleartext is empty')
+        .expect(page.getCiphertextTextarea().value).eql('', 'ciphertext is empty')
+        .typeText(page.getCleartextTextarea(), 'soon to be deleted')
+        .click(page.getDownloadCleartextButton())
+        .click(page.getReloadCiphertextButton())
+        .expect(page.getCleartextTextarea().value).eql('', { timeout: 500 }, 'cleartext is empty')
+        .expect(page.getCiphertextTextarea().value).eql('', { timeout: 500 }, 'cleartext is empty')
+});
+
 test('When the user click on upload, delete the text and reload, the text is back again', async t => {
     await page.loginExt()
     await page.focus(page.getCleartextTextarea())
@@ -75,16 +90,3 @@ test('When the user click on upload, delete the text and reload, the text is bac
         .expect(page.getCiphertextTextarea().value).notEql('', { timeout: 500 })
         .expect(page.getCleartextTextarea().value).eql('hello')
 });
-
-
-/*
-
-test('The first time the account is created, hitting the reload button empty the textareas', async t => {
-});
-
-test('XXX various tests on errors, how to do them?', async t => {
-});
-
-test('Login fails when the external service is not reachable', async t => {    await page.login()
-
-*/
