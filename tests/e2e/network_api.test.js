@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { RequestLogger } from 'testcafe';
 import VanillaCryptoPage from './page_object';
 
 const page = new VanillaCryptoPage();
@@ -7,8 +8,53 @@ const store_url = 'http://localhost:5000'
 const upload_base_url = 'http://s3like.com:9000/'
 const derive_key_iterations = 2;
 
+function formatLogEntry(r) {
+    const { id, testRunId, request, response } = r
+
+    const f = {
+        id,
+        testRunId,
+        timeDiff: `${response.timestamp - request.timestamp}ms`,
+        request: {
+            method: request.method.toUpperCase(),
+            url: request.url,
+            contentType: request.headers['content-type'],
+        },
+        response: {
+            status: response.statusCode,
+            contentType: response.headers['content-type'],
+        },
+    }
+
+    if (request.body) {
+        f.request.body = request.body
+        if (request.headers['content-type'].indexOf('json') != -1) {
+            try { f.request.body = JSON.parse(request.body) } catch (e) {}
+        }
+    }
+
+    if (response.body) {
+        f.response.body = response.body
+        if (response.headers['content-type'].indexOf('json') != -1) {
+            try { f.response.body = JSON.parse(response.body) } catch (e) {}
+        }
+    }
+
+    return f
+}
+
+const logger = RequestLogger(/^((?!svanill\.html).)*$/, {
+    logRequestHeaders: true,
+    logResponseHeaders: true,
+    logRequestBody: true,
+    logResponseBody: true,
+    stringifyRequestBody: true,
+    stringifyResponseBody: true,
+});
+
 fixture `Open main page`
     .page `file://${__dirname}/../../svanill.html?store_url=${store_url}&upload_base_url=${upload_base_url}&iterations=${derive_key_iterations}`
+    .requestHooks(logger)
     .beforeEach( async t => {
         await t.setNativeDialogHandler((type, text, url) => {
             switch (type) {
@@ -23,6 +69,19 @@ fixture `Open main page`
                     throw 'Unexpected dialog!';
             }
         });
+    })
+    .afterEach( async t => {
+        if (t.testRun.errs.length > 0) {
+            console.log(t.testRun.consoleMessages)
+            logger.requests.map(formatLogEntry).forEach((r) => {
+                console.log(`###########`)
+                console.log(`# ${r.request.method} ${r.request.url}`)
+                console.log(`###########`)
+                console.log(JSON.stringify(r, undefined, 2))
+                console.log('')
+            })
+        }
+        logger.clear()
     })
 ;
 
