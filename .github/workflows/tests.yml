@@ -82,7 +82,13 @@ jobs:
       id: yarn-install
       run: yarn install
 
-    - name: Run e2e tests
+    - name: Run e2e networkless tests
       run: |
         yarn run test-e2e-networkless-chrome
         yarn run test-e2e-networkless-firefox
+
+    - name: Run e2e network api tests
+      run: |
+        yarn run setup-e2e-tests
+        yarn run test-e2e-network-api-chrome
+        yarn run test-e2e-network-api-firefox
