@@ -7,10 +7,11 @@ services:
         volumes:
             - ./var/tests/redis:/data
     s3_like:
-        image: minio/minio
+        image: minio/minio:RELEASE.2019-06-01T03-46-14Z
         environment:
             MINIO_ACCESS_KEY: test_s3_access_key
             MINIO_SECRET_KEY: test_s3_secret_key
+            MINIO_HTTP_TRACE: /dev/stdout
         entrypoint: minio server /data
         expose:
             - "9000"
