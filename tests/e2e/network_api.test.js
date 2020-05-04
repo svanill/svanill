@@ -5,7 +5,7 @@ import VanillaCryptoPage from './page_object';
 const page = new VanillaCryptoPage();
 
 const store_url = 'http://localhost:5000'
-const upload_base_url = 'http://s3like.com:9000/'
+const upload_base_url = 'http://localhost:9000/'
 const derive_key_iterations = 2;
 
 function formatLogEntry(r) {
