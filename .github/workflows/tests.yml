@@ -93,8 +93,12 @@ jobs:
         yarn run test-e2e-network-api-chrome
         yarn run test-e2e-network-api-firefox
 
+    - name: Display docker logs
+      if: failure()
+      run: docker-compose -f tests/e2e/docker-compose.yml logs
+
     - name: Archive test artifacts
-      if: always()
+      if: failure()
       uses: actions/upload-artifact@v1
       with:
         name: screenshots

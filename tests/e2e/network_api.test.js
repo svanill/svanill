@@ -14,15 +14,10 @@ function formatLogEntry(r) {
     const f = {
         id,
         testRunId,
-        timeDiff: `${response.timestamp - request.timestamp}ms`,
         request: {
             method: request.method.toUpperCase(),
             url: request.url,
             contentType: request.headers['content-type'],
-        },
-        response: {
-            status: response.statusCode,
-            contentType: response.headers['content-type'],
         },
     }
 
@@ -33,10 +28,18 @@ function formatLogEntry(r) {
         }
     }
 
-    if (response.body) {
-        f.response.body = response.body
-        if (response.headers['content-type'].indexOf('json') != -1) {
-            try { f.response.body = JSON.parse(response.body) } catch (e) {}
+    if (response) {
+        f.timeDiff = `${(response.timestamp || now()) - request.timestamp}ms`
+        f.response = {
+            status: response.statusCode,
+            contentType: response.headers['content-type'],
+        }
+
+        if (response.body) {
+            f.response.body = response.body
+            if (response.headers['content-type'].indexOf('json') != -1) {
+                try { f.response.body = JSON.parse(response.body) } catch (e) {}
+            }
         }
     }
 
