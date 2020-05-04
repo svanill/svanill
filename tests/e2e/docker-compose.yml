@@ -7,18 +7,11 @@ services:
         volumes:
             - ./var/tests/redis:/data
     s3_like:
-        image: minio/minio:edge
-        volumes:
-            - ./var/tests/minio/config:/root/.minio
-            - ./var/tests/minio/volumes:/export
+        image: minio/minio
         environment:
             MINIO_ACCESS_KEY: test_s3_access_key
             MINIO_SECRET_KEY: test_s3_secret_key
-            MINIO_BROWSER: 'on'
-        volumes:
-            - ./var/minio/config:/root/.minio
-            - ./var/minio/volumes:/export
-        entrypoint: minio server /export/volumes/hd1 /export/volumes/hd2 /export/volumes/hd3 /export/volumes/hd4
+        entrypoint: minio server /data
         expose:
             - "9000"
         ports:
