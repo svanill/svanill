@@ -860,7 +860,8 @@ async function fetchJSONWithRetryOnAuthExpired(href, options) {
 }
 
 class FetchUnexpectedError extends Error {
-    constructor() {
+    constructor(e) {
+        console.error(e)
         super("Cannot fetch an external resource: check your internet connection or configuration");
     }
 }

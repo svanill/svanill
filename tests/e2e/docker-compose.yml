@@ -1,29 +1,26 @@
 version: '2'
 services:
     user_db:
+        network_mode: host
         image: redis:3.2.8-alpine
         expose:
             - "6379"
         volumes:
             - ./var/tests/redis:/data
     s3_like:
-        image: minio/minio:edge
-        volumes:
-            - ./var/tests/minio/config:/root/.minio
-            - ./var/tests/minio/volumes:/export
+        network_mode: host
+        image: minio/minio:RELEASE.2019-06-01T03-46-14Z
         environment:
             MINIO_ACCESS_KEY: test_s3_access_key
             MINIO_SECRET_KEY: test_s3_secret_key
-            MINIO_BROWSER: 'on'
-        volumes:
-            - ./var/minio/config:/root/.minio
-            - ./var/minio/volumes:/export
-        entrypoint: minio server /export/volumes/hd1 /export/volumes/hd2 /export/volumes/hd3 /export/volumes/hd4
+            MINIO_HTTP_TRACE: /dev/stdout
+        entrypoint: minio server /data
         expose:
             - "9000"
         ports:
             - "9000:9000"
     web:
+        network_mode: host
         image: riquito/piggy-store
         ports:
             - "127.0.0.1:5000:5000"
@@ -31,27 +28,25 @@ services:
             - user_db
             - s3_like
             - createbuckets
-        links:
-            - user_db
-            - s3_like:s3like.com
         environment:
             APP_S3_SECURE: 'false'
             APP_S3_KEY_ACCESS: test_s3_access_key
             APP_S3_KEY_SECRET: test_s3_secret_key
             APP_S3_BUCKET: testbucket
+            APP_S3_HOST: localhost:9000
             APP_PIGGY_HOST: '0.0.0.0'
             APP_PIGGY_PORT: '5000'
             APP_PIGGY_SENTRYDSN: ''
+            APP_REDIS_HOST: localhost
     createbuckets:
+        network_mode: host
         image: minio/mc
         depends_on:
             - s3_like
-        links:
-            - s3_like:s3like.com
         entrypoint: >
             /bin/sh -c "
                 sleep 3;
-                mc config host add s3likehost http://s3like.com:9000 test_s3_access_key test_s3_secret_key && \
+                mc config host add s3likehost http://localhost:9000 test_s3_access_key test_s3_secret_key && \
                 (mc rm -r --force s3likehost/testbucket 2&>1 > /dev/null || true) && \
                 mc mb s3likehost/testbucket && \
                 mc policy set public s3likehost/testbucket \

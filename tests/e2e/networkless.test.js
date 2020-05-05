@@ -3,8 +3,12 @@ import VanillaCryptoPage from './page_object';
 
 const page = new VanillaCryptoPage();
 
+const store_url = 'not-a-real-store-url-must-fail-if-ever-used'
+const upload_base_url = 'not-a-real-upload-url-must-fail-if-ever-used'
+const derive_key_iterations = 2;
+
 fixture `Open main page`
-    .page `file://${__dirname}/../../svanill.html`;
+    .page `file://${__dirname}/../../svanill.html?store_url=${store_url}&upload_base_url=${upload_base_url}&iterations=${derive_key_iterations}`;
 
 test('Login form submit button change status when the secrets changes', async t => {
 
