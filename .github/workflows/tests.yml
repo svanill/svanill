@@ -84,14 +84,14 @@ jobs:
 
     - name: Run e2e networkless tests
       run: |
-        yarn run test-e2e-networkless-chrome
-        yarn run test-e2e-networkless-firefox
+        yarn test-e2e-networkless-chrome
+        yarn test-e2e-networkless-firefox
 
     - name: Run e2e network api tests
       run: |
         yarn setup-network-env
-        yarn run test-e2e-network-api-firefox
-        yarn run test-e2e-network-api-chrome
+        yarn test-e2e-network-api-firefox
+        yarn test-e2e-network-api-chrome
 
     - name: Display docker logs
       if: failure()
