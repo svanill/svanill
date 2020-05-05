@@ -9,6 +9,33 @@ It's small, you can either use it from [https://svanill.com](https://svanill.com
 
 Even without a network connection it will allow you to encrypt/decrypt data on your device. If you want to keep your encrypted data on an external server you can either use the default [https://svanill.com](https://svanill.com) - the option appears if you provide a username - or edit the file and point at your own server.
 
+How to run
+==========
+
+Open [svanill.html](./svanill.html) on a browser.
+
+How to run the tests
+====================
+
+```
+# unit tests
+yarn test-unit
+```
+
+```
+# e2e tests networkless (encrypt/decrypt interface, no sync)
+yarn test-e2e-networkless-chrome
+yarn test-e2e-networkless-firefox
+```
+
+```
+# e2e tests with network api (login, upload, reload)
+yarn setup-network-env
+yarn test-e2e-network-api-chrome
+yarn test-e2e-network-api-firefox
+yarn teardown-network-env
+```
+
 Goals
 =====
 
