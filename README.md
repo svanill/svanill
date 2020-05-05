@@ -1,3 +1,5 @@
+![Tests](https://github.com/svanill/svanill/workflows/Tests/badge.svg)
+
 Svanill
 =============
 
