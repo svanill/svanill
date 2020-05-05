@@ -89,7 +89,7 @@ jobs:
 
     - name: Run e2e network api tests
       run: |
-        yarn run setup-e2e-tests
+        yarn setup-network-env
         yarn run test-e2e-network-api-firefox
         yarn run test-e2e-network-api-chrome
 
