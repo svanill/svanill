@@ -30,8 +30,12 @@ jobs:
       id: checksum-local-svanill
       run: |
         echo "##[set-output name=md5;]$(md5sum svanill.html | cut -d' ' -f1)"
-      
+
     - name: Copy files to S3 with the AWS CLI
       if: steps.checksum-s3-svanill.outputs.md5 != steps.checksum-local-svanill.outputs.md5
       run: |
         aws s3 cp svanill.html s3://svanill.com/svanill.html
+
+    - name: Sync htdocs to S3
+      run: |
+        aws s3 sync --size-only htdocs/ s3://svanill.com/
