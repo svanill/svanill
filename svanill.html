@@ -274,7 +274,9 @@ input[type=text], input[type=password] {
 </p>
 
 <form id="login-form" class="page-load" role="form">
-    <label class="login-label" for="username">Username (optional)</label>
+    <label class="login-label" for="username">Username
+    <span title="If you provide one it will enable sync capabilities and do network requests">(?) - optional</span>
+    </label>
     <input id="username" type="text"
         title="The optional username allows you to access an external service (to upload/sync your files)"
         class="login-text"
