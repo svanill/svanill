@@ -7,13 +7,13 @@ An easily auditable tool to encrypt/decrypt your sensitive data.
 
 [One file](./svanill.html), no dependencies. If you trust the browser internals you just have to audit this file.
 
-It's small, you can either use it from [https://svanill.com](https://svanill.com) and review it every time or keep your own copy.
+It's small, you can either use it from [https://svanill.com](https://svanill.com) (and review it every time) or keep your own copy.
 
 Even without a network connection it will allow you to encrypt/decrypt data on your device.
 
 If you provide a username you will be able to sync your encrypted data with an external server (by default [https://api.svanill.com](https://api.svanill.com)). Without it no network requests will be sent.
 Eventually a version of Svanill without network code will be done.
-By the way, don't trust the external server for privacy, verify that Svanill just send encrypted data secure at rest, that's the point of having auditable code.
+By the way, don't trust the external server for privacy, verify that Svanill will just send encrypted data that can be secure at rest, that's the point of having auditable code.
 
 How to run
 ==========
@@ -92,7 +92,14 @@ You should [use the longest passphrase](https://en.wikipedia.org/wiki/Password_s
 
 ![format diagram](./assets/format_diagram.png)
 
-Here I encrypted the text `svanill` using `foobar` as password. Note that this particular password is weak (short and guessable), used just for the sake of example.
+Here it's encrypted the text `svanill` using `foobar` as password. Note that this particular password is weak (short and guessable), used just for the sake of example.
+
+To decrypt we read the first byte to determine how the rest of the bytes are aligned, and use them to decrypt. If somehow the data got tampered we won't be able to decrypt.
+Since we are not communicating with an external party during decryption there should be no timing attack.
+
+To protect against a purposefully crafted high iteration number, which would starve the cpu, Svanill won't attempt to decrypt if that number is higher than what we use to encrypt.
+
+Nothing from decryption is reused for future encryption, to prevent downgrade attacks or blatant compromissions (like reusing the iv).
 
 ## Wouldn't Argon2 be better than PBKDF2?
 
