@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Svanill</title>
+    <meta name="description" content="Svanill, an easily auditable tool to manage your sensitive data" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel='stylesheet' crossorigin="anonymous" href='https://fonts.googleapis.com/css?family=Vollkorn&display=swap'>
+<style>
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Vollkorn', 'Georgia', serif;
+    font-weight: normal;
+    line-height: 1.1em;
+    color: #5eba7d;
+}
+
+html, body {
+  background-color: #141520;
+  color: #cfd2d6;
+}
+
+a {
+  color: #3ca4ff;
+}
+a:visited {
+  color: #81c4f8;
+}
+
+ul {
+    margin: 0;
+}
+
+body {
+    padding: 0 2em;
+    margin: 0 auto;
+    max-width: 900px;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+}
+
+#faq > h2 {
+    color: #f1b600;
+}
+
+#faq > h3 {
+    color: #dab941;
+}
+
+#encryption > h2 {
+    color: #d25d5d;
+}
+
+#encryption > h3 {
+    color: #b24d49;
+}
+
+#encryption .keyword {
+    font-weight: 700;
+    color: #b24d49;
+}
+
+h2 {
+    margin-bottom: 5px;
+}
+
+h4 {
+  color: #cfd2d6;
+}
+
+#alternatives > li > h4 {
+    margin-bottom: 0;
+    font-weight: 700;
+}
+
+#alternatives p {
+    margin-top: 5px;
+}
+
+#diagram {
+    display: block;
+    width: 802px;
+    max-width: 100%;
+    margin-top: 1em;
+    margin: 1em auto 0;
+}
+
+</style>
+</head>
+<body>
+<h1><a href="https://svanill.com" target="_blank" noopener noreferrer>Svanill</a></h1>
+
+<p>
+    An easily auditable tool to encrypt/decrypt your sensitive data.
+    <br /><br />
+    <a href="https://svanill.com/svanill.html" target="_blank" noopener noreferrer>One file</a>, no dependencies. If you trust the browser internals you just have to audit that file.
+    <br /><br />
+    It's small, you can either use it from <a href="https://svanill.com" target="_blank" noopener noreferrer>https://svanill.com</a> (and review it every time) or keep your own copy.
+    <br />
+    Even without a network connection it will allow you to encrypt/decrypt data on your device.
+    <br /><br />
+    If you provide a username you will be able to sync your encrypted data with an external server (by default <a href="https://api.svanill.com" target="_blank" noopener noreferrer>https://api.svanill.com</a>). Without it no network requests will be sent.
+    <br/>
+    Eventually a version of Svanill without network code will be done.
+    By the way, don't trust the external server for privacy, verify that Svanill will just send encrypted data that can be secure at rest, that's the point of having auditable code.
+    <br /><br />
+    You can find the <a href="https://github.com/svanill/svanill" target="_blank" noopener noreferrer>sources</a> on Github.
+</p>
+
+<h2>Goals</h2>
+
+<ul>
+  <li>have the means to manage secrets</li>
+  <li>must be open source</li>
+  <li>it must be a standalone program or work on an recent browser</li>
+  <li>it must be portable (Linux, Windows, Android, macOS, ...)</li>
+  <li>it must not use external dependencies</li>
+  <li>(or at least it must work in a sandboxed environment - no network, no filesystem, no ipc...)</li>
+  <li>the source code must be easily auditable by one person in a short time</li>
+  <li>any optional outgoing network requests must send data encrypted client-side</li>
+</ul>
+
+<h2>Non goals</h2>
+
+<ul>
+  <li>write the smallest possible file sacrificing documentation or readability
+  <li>give the ability to upload to more than one external service at once
+</ul>
+
+<h2>Undecided goals</h2>
+
+<ul>
+  <li>store binary files</li>
+  <li>handle multiple files</li>
+</ul>
+
+<h2>Use cases</h2>
+
+<ul>
+  <li>You don't trust any software without reviewing it yourself, at every update</li>
+  <li>You really need to use someone else's computer (you feel ok to open your data on a browser - possibly incognito mode, no extensions)</li>
+  <li>You want to share something privately, passing the password on a different channel</li>
+</ul>
+
+<div id="encryption">
+<h2>Encryption</h2>
+
+<h3>How is content encrypted?</h3>
+
+<p>
+Content is secured by a symmetric encryption algorithm, using <span class="keyword">AES-GCM</span>.
+<br />
+The primitives used come directly from the browser (crypto.subtle and crypto.getRandomValues).
+<br />
+The <span class="keyword">key</span> is derived using <span class="keyword">PBKDF2-HMAC-SHA-256</span>, 100.000 <span class="keyword">iterations</span>.
+<br />
+The size of the <span class="keyword">iv/nonce</span> is 96 bit, randomly generated before any encryption.
+<br />
+The <span class="keyword">salt</span> is 128 bit long, randomly generated before any encryption.
+<br />
+Random data is obtained through <a href="https://developer.mozilla.org/en-US/docs/Web/API/RandomSource/getRandomValues" target="_blank" noopener noreferrer>crypto.getRandomValues</a> (its <span class="keyword">PNRG</span> is suitable for cryptographic purposes).
+<br />
+Everything but the key is prepended to the ciphertext and thus public.
+<br />
+The data must be secure at rest, so the strength of the key is what matters most.
+You should <a href="https://en.wikipedia.org/wiki/Password_strength" target="_blank" noopener noreferrer>use the longest passphrase</a> you are confident to remember (assuming just english letters and digits, it should be at least 14 characters long - around 72 bit of entropy).
+
+<img id="diagram" src="./assets/format_diagram_dark.png" alt="encrypted box format" />
+
+<br />
+Here it's encrypted the text `svanill` using `foobar` as password. Note that this particular password is weak (short and guessable), used just for the sake of example.
+<br /><br />
+To decrypt we read the first byte to determine how the rest of the bytes are aligned, and use them to decrypt. If somehow the data got tampered we won't be able to decrypt.
+<br />Since we are not communicating with an external party during decryption there should be no timing attack.<br /><br />
+To protect against a purposefully crafted high iteration number, which would starve the cpu, Svanill won't attempt to decrypt if that number is higher than what we use to encrypt.
+<br /><br />Nothing from decryption is reused for future encryption, to prevent downgrade attacks or blatant compromissions (like reusing the iv).
+
+</p>
+
+<h3>Wouldn't Argon2 be better than PBKDF2?</h3>
+
+<p>
+It's not really an option, Argon2 is not part of the Web Cryptography API.
+</p>
+
+<h3>What about libsodium?</h3>
+
+<p>
+It would be an external dependency, pretty much inscrutable and requiring to verify its authenticity. I decided not to give the user the burden to verify the signatures. I also liked the idea of a self-contained program that could work without network requests.
+</p>
+</div>
+
+<div id="faq">
+<h2>F.A.Q.</h2>
+
+<h3>Will the browser cache my data?</h3>
+
+<p>
+No, but but you should use private browsing nonetheless.
+</p>
+
+<h3>Can I trust my browser?</h3>
+
+<p>
+That's a difficult question. If you don't, you shouldn't use it to navigate the Internet. The highest risks are when you are using an outdated browser and when you're using browser extensions. If you want to be at ease you should use an updated browser and open Svanill from a profile without extensions, in private mode (even moreso if you're using someone else's computer).
+</p>
+
+<h3>Why you think that this kind of software should be open source?</h3>
+
+<p>
+Because you should be able to check if the original code or any later update contains malicious operations or bugs, and be able to act accordingly.
+<br />
+Even if I would deem secure a particular version, every update could contain malicious code (e.g. the company has been acquired by EvilCorp or forced by a powerful entity) or may contain bugs which I would not be able to neither detect nor fix, letting me open to attacks until a new update arrive (if ever).
+<br />
+Even if the software is audited by a third party it usually doesn't mean that every single update is audited.
+</p>
+
+<h3>Does it work without an Internet connection?</h3>
+
+<p>
+Yes, you could keep a local copy to encrypt/decrypt data (you would not be able to sync online of course).
+</p>
+
+</div>
+
+<h2>Alternative programs</h2>
+
+<p>
+These programs do not really match the goals of Svanill, but they come up anyway in questions, so here they are.
+</p>
+
+<ul id="alternatives">
+  <li>
+    <h4>Bitwarden</h4>
+    <p>
+      Impressive product, they open source everything from mobile app to website vault.
+      It just doesn't match our goals.
+    </p>
+  </li>
+  <li>
+    <h4>Enpass</h4>
+    <p>
+      Very interesting product. Standalone support, truly comprehensive cross-platform versions, stores the data using SQLCipher (which is open source) and never stores your data online.
+      Doesn't match our goals.
+    </p>
+  </li>
+  <li>
+    <h4>Lastpass / 1Password</h4>
+    <p>
+      Both are closed source and not auditable by an independent external auditor.
+      1Password also has never committed to a first class Linux application, and after 10 years likely never will.
+    </p>
+  </li>
+  <li>
+    <h4>Keypass</h4>
+    <p>
+      Too big to audit for a solo developer. Keypass 1.x was audited, but Keypass 2.x was not and, cit. keypass.info, "They are fundamentally different". No official/audited Android application.
+      Yet it's respected and full featured if that's what you're searching for.
+    </p>
+  <li>
+    <h4>pass</h4>
+    <p>
+      Requires to keep around a gpg private key. No official/audited Android application.
+    </p>
+  </li>
+</ul>
+</body>
+</html>

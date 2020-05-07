@@ -90,7 +90,7 @@ Everything but the key is prepended to the ciphertext and thus public.
 The data must be secure at rest, so the strength of the key is what matters most.
 You should [use the longest passphrase](https://en.wikipedia.org/wiki/Password_strength) you are confident to remember (assuming just english letters and digits, it should be at least 14 characters long - around 72 bit of entropy).
 
-![format diagram](./assets/format_diagram.png)
+![format diagram](./htdocs/assets/format_diagram.png)
 
 Here it's encrypted the text `svanill` using `foobar` as password. Note that this particular password is weak (short and guessable), used just for the sake of example.
 

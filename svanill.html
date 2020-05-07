@@ -264,6 +264,15 @@ input[type=text], input[type=password] {
   animation: spinner-animation .6s linear infinite;
 }
 
+#about {
+  position: fixed;
+  top: 5px;
+  right: 5px;
+}
+
+a { color: #3ca4ff; }
+a:visited { color: #81c4f8; }
+
 </style>
 </head>
 <body spellcheck="false" class="require-login enable-external-actions" onload="onPageLoaded()">
@@ -274,6 +283,7 @@ input[type=text], input[type=password] {
 </p>
 
 <form id="login-form" class="page-load" role="form">
+    <a id="about" href="https://svanill.com/about.html" noopener noreferrer>About</a>
     <label class="login-label" for="username">Username
     <span title="If you provide one it will enable sync capabilities and do network requests">(?) - optional</span>
     </label>
