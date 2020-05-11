@@ -409,7 +409,7 @@ async function willEncryptPlaintext(plaintext, secret, b_salt, iterations, b_iv)
         {
             name: 'AES-GCM',
             iv: b_iv,
-            additionalData: stringToUint8Array(ad),
+            additionalData: hexToBuf(ad),
         },
         derivedKey,
         stringToUint8Array(plaintext)
@@ -455,7 +455,7 @@ async function willDecryptCiphertext(encryptedBox, secret) {
         {
             name: 'AES-GCM',
             iv: b_iv,
-            additionalData: stringToUint8Array(encryptedBox.slice(0, 42)),
+            additionalData: hexToBuf(encryptedBox.slice(0, 42)),
         },
         derivedKey,
         b_enc

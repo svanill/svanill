@@ -212,7 +212,7 @@ describe('willEncryptPlaintext',  () => {
             '00000002', // iterations
             '000102030405060708090a0b0c0d0e0f', // salt
             '000102030405060708090a0b', // iv
-            'ed5fe4b042d792907de0517b6fefd0161e2adc2d004ac4d3d0', // cyphertext
+            'ed5fe4b042d792907da28727bf418c3f8ceb8d0ea4370fe1c6', // cyphertext
         ].join('')
 
         expect(result).toBe(expectedResult);
@@ -227,7 +227,7 @@ describe('willDecryptCiphertext',  function () {
             '00000002', // iterations
             '000102030405060708090a0b0c0d0e0f', // salt
             '000102030405060708090a0b', // iv
-            'ed5fe4b042d792907de0517b6fefd0161e2adc2d004ac4d3d0', // cyphertext
+            'ed5fe4b042d792907da28727bf418c3f8ceb8d0ea4370fe1c6', // cyphertext
         ].join('')
 
         const plaintext = await willDecryptCiphertext(encryptedBox, secret);
