@@ -33,21 +33,21 @@ export default class VanillaCryptoPage {
     }
     async login() {
         await t
-            .typeText(this.getInputSecret(), 'such secret', { replace: true })
-            .typeText(this.getInputConfirmSecret(), 'such secret', { replace: true })
+            .typeText(this.getInputSecret(), 'testpw', { replace: true })
+            .typeText(this.getInputConfirmSecret(), 'testpw', { replace: true })
             .click(this.getLoginButton())
     }
     async loginExt(username) {
         await t
-            .typeText(this.getInputSecret(), 'such secret', { replace: true })
-            .typeText(this.getInputConfirmSecret(), 'such secret', { replace: true })
-            .typeText(this.getInputUsername(), username || 'such-name', { replace: true })
+            .typeText(this.getInputSecret(), 'testpw', { replace: true })
+            .typeText(this.getInputConfirmSecret(), 'testpw', { replace: true })
+            .typeText(this.getInputUsername(), username || 'test-user', { replace: true })
             .click(this.getLoginButton())
     }
     async loginUsingKeyboard() {
         await t
-            .typeText(this.getInputSecret(), 'such secret', { replace: true })
-            .typeText(this.getInputConfirmSecret(), 'such secret', { replace: true })
+            .typeText(this.getInputSecret(), 'testpw', { replace: true })
+            .typeText(this.getInputConfirmSecret(), 'testpw', { replace: true })
 
         await this.focus(this.getLoginButton())
 

@@ -1,12 +1,5 @@
-version: '2'
+version: '3.2'
 services:
-    user_db:
-        network_mode: host
-        image: redis:3.2.8-alpine
-        expose:
-            - "6379"
-        volumes:
-            - ./var/tests/redis:/data
     s3_like:
         network_mode: host
         image: minio/minio:RELEASE.2020-08-16T18-39-38Z
@@ -14,6 +7,7 @@ services:
             MINIO_ACCESS_KEY: test_s3_access_key
             MINIO_SECRET_KEY: test_s3_secret_key
             MINIO_HTTP_TRACE: /dev/stdout
+            MINIO_DOMAIN: localhost
         entrypoint: minio server /data
         expose:
             - "9000"
@@ -21,23 +15,22 @@ services:
             - "9000:9000"
     web:
         network_mode: host
-        image: riquito/piggy-store
+        image: svanill-vault-server:latest
         ports:
             - "127.0.0.1:5000:5000"
         depends_on:
-            - user_db
             - s3_like
             - createbuckets
+        volumes:
+          - ./vault.db:/usr/src/share/vault.db:ro
         environment:
-            APP_S3_SECURE: 'false'
-            APP_S3_KEY_ACCESS: test_s3_access_key
-            APP_S3_KEY_SECRET: test_s3_secret_key
-            APP_S3_BUCKET: testbucket
-            APP_S3_HOST: localhost:9000
-            APP_PIGGY_HOST: '0.0.0.0'
-            APP_PIGGY_PORT: '5000'
-            APP_PIGGY_SENTRYDSN: ''
-            APP_REDIS_HOST: localhost
+          AWS_ACCESS_KEY_ID: test_s3_access_key
+          AWS_SECRET_ACCESS_KEY: test_s3_secret_key
+          SVANILL_VAULT_S3_BUCKET: testbucket
+          SVANILL_VAULT_S3_ENDPOINT: http://localhost:9000
+          SVANILL_VAULT_DB: /usr/src/share/vault.db
+          SVANILL_VAULT_HOST: '127.0.0.1'
+          SVANILL_VAULT_PORT: '5000'
     createbuckets:
         network_mode: host
         image: minio/mc
