@@ -915,7 +915,7 @@ async function fetchJSON(href, options = {}) {
 
     const response = await fetchOrThrow(href, options);
 
-    if (response.headers.get('Content-Type') === 'application/json') {
+    if (response.headers.get('Content-Type').startsWith('application/json')) {
         return response.json();
     } else {
         throw new FetchUnexpectedFormat(response.statusText);
