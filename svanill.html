@@ -586,16 +586,8 @@ async function _willGetAuthToken(username, secret) {
         const challenge = (await willRequestChallenge(username)).content.challenge;
         return (await willAnswerChallenge(username, secret, challenge)).content.token;
     } catch (e) {
-        if (e instanceof UserDoesNotExistError) {
-            if (!window.confirm('No user found with that username, would you like to create it?')) {
-                throw new Error('Cannot proceed');
-            }
-
-            const answer = bufToHex(window.crypto.getRandomValues(new Uint8Array(16)));
-            const challenge = await willRequestEncryption(answer);
-            return (await willCreateNewUser(username, answer, challenge)).content.token;
-        } else if (e instanceof SubtleDecryptError) {
-            throw new Error('The password is not correct');
+        if (e instanceof UserDoesNotExistError || e instanceof SubtleDecryptError) {
+            throw new Error('Not authorized. Check username and password');
         } else {
             throw e;
         }
@@ -651,27 +643,6 @@ async function willAnswerChallenge(username, secret, challenge) {
     }
 
     return parsedResponse;
-}
-
-async function willCreateNewUser(username, answer, challenge) {
-    const url = new URL(STORE_URL + '/users/');
-    const parsedResponse = await fetchJSON(url.href, {
-        method: 'POST',
-        body: JSON.stringify({ username, answer, challenge }),
-    });
-
-    if (parsedResponse.error) {
-        throw new CannotCreateNewUserError(parsedResponse.error);
-    }
-
-    return parsedResponse;
-}
-
-class CannotCreateNewUserError extends Error {
-    constructor(jsonError) {
-        super(`Couldn't create the user. Server response was: ` +
-        `[${jsonError.code}] ${jsonError.message}`);
-    }
 }
 
 class CannotRequestChallengeError extends Error {
@@ -929,7 +900,6 @@ async function attemptLogin() {
         toggleOverlay(true);
         try {
             if (getValueAt('username')) {
-                // auth, possibly ask to create the user
                 const token = await willGetAuthToken();
                 await reloadFile();
             } else {

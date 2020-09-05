@@ -61,13 +61,6 @@ fixture `Open main page`
     .beforeEach( async t => {
         await t.setNativeDialogHandler((type, text, url) => {
             switch (type) {
-                case 'confirm':
-                    switch (text) {
-                        case 'No user found with that username, would you like to create it?':
-                            return true;
-                        default:
-                            throw 'Unexpected confirm dialog!';
-                    }
                 default:
                     throw 'Unexpected dialog!';
             }
@@ -88,24 +81,16 @@ fixture `Open main page`
     })
 ;
 
-test('If the user is prompted to create an account and answer "no" an error is displayed', async t => {
-    await t.setNativeDialogHandler(() => false);
-    await page.loginExt('donotcreateme')
+test('If the user does not exist the proper error is displayed', async t => {
+    await page.loginExt('some-unauthorized-user')
 
     await t
         .expect(page.getErrorBar().visible).ok()
-        .expect(page.getErrorBar().innerText).eql('Cannot proceed\nDismiss')
+        .expect(page.getErrorBar().innerText).eql('Not authorized. Check username and password\nDismiss')
 });
 
-test('Login fails when the external service does not accept the credentials', async t => {
-    await page.loginExt('bad username, has commas and spacing')
 
-    await t
-        .expect(page.getErrorBar().visible).ok()
-        .expect(page.getErrorBar().innerText).eql(`Couldn\'t start authentication. Server response was: [1001] Username should contain only ascii letters, numbers, _, -, max 50 chars)\nDismiss`)
-});
-
-test('If the user is prompted to create an account and answer "yes" the application is displayed', async t => {
+test('If the user is able to login the application is displayed', async t => {
     await page.loginExt()
 
     await t
@@ -114,9 +99,8 @@ test('If the user is prompted to create an account and answer "yes" the applicat
         .expect(page.getMainContainer().visible).ok()
 });
 
-test('When a new user start by clicking reload, textareas should be emptied', async t => {
-    const newUser = crypto.randomBytes(20).toString('hex')
-    await page.loginExt(newUser)
+test('When a user who never uploaded anything clicks reload, textareas should be emptied', async t => {
+    await page.loginExt()
     await page.focus(page.getCleartextTextarea())
 
     await t
