@@ -20,11 +20,6 @@
   },
   "scripts": {
     "test-unit": "node_modules/.bin/karma start",
-    "setup-network-env": "docker-compose -f tests/e2e/docker-compose.yml up -d createbuckets && docker-compose -f tests/e2e/docker-compose.yml up -d",
-    "teardown-network-env": "docker-compose -f tests/e2e/docker-compose.yml down",
-    "test-e2e-networkless-chrome": "node_modules/.bin/testcafe --hostname localhost -c 4 -s takeOnFails=true chrome:headless tests/e2e/networkless.test.js",
-    "test-e2e-networkless-firefox": "node_modules/.bin/testcafe --hostname localhost -c 4 -s takeOnFails=true firefox:headless tests/e2e/networkless.test.js",
-    "test-e2e-network-api-chrome": "node_modules/.bin/testcafe --hostname localhost -c 1 -s takeOnFails=true chrome:headless tests/e2e/network_api.test.js",
-    "test-e2e-network-api-firefox": "node_modules/.bin/testcafe --hostname localhost -c 1 -s takeOnFails=true firefox:headless tests/e2e/network_api.test.js"
+    "test-e2e": "bin/run_tests_e2e.sh"
   }
 }
