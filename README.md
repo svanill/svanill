@@ -11,7 +11,7 @@ It's small, you can either use it from [https://svanill.com](https://svanill.com
 
 Even without a network connection it will allow you to encrypt/decrypt data on your device.
 
-If you provide a username you will be able to sync your encrypted data with an external server (by default [https://api.svanill.com](https://api.svanill.com)). Without it no network requests will be sent.
+If you provide a username you will be able to sync your encrypted data with an external server (by default [https://api.svanill.com](https://api.svanill.com), an instance of [svanill-vault-server](https://github.com/svanill/svanill-vault)). Without it no network requests will be sent.
 Eventually a version of Svanill without network code will be done.
 By the way, don't trust the external server for privacy, verify that Svanill will just send encrypted data that can be secure at rest, that's the point of having auditable code.
 
@@ -26,20 +26,9 @@ How to run the tests
 ```
 # unit tests
 yarn test-unit
-```
 
-```
-# e2e tests networkless (encrypt/decrypt interface, no sync)
-yarn test-e2e-networkless-chrome
-yarn test-e2e-networkless-firefox
-```
-
-```
-# e2e tests with network api (login, upload, reload)
-yarn setup-network-env
-yarn test-e2e-network-api-chrome
-yarn test-e2e-network-api-firefox
-yarn teardown-network-env
+# e2e tests (requires `docker-compose`)
+yarn test-e2e
 ```
 
 Goals
@@ -143,8 +132,8 @@ These programs do not really match the goals of Svanill and offer so much more, 
  Doesn't match our goals.
 
 - **Lastpass / 1Password**  
- Both are closed source and not auditable by an independent external auditor.
- 1Password also has never committed to a first class Linux application, and after 10 years likely never will.
+ Both are closed source and not freely auditable by an independent external auditor.
+ 1Password in particular has never had first class support for Linux.
 
 - **Keypass**  
  Too big to audit for a solo developer. Keypass 1.x was audited, but Keypass 2.x was not and, cit. keypass.info, "They are fundamentally different". No official/audited Android application.
