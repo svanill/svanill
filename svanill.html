@@ -19,7 +19,7 @@ const STORE_URL =  new URLSearchParams(document.location.search).get('store_url'
 // Prefix you expect in the proposed urls you're given to upload to (use the empty string to allow all).
 // End it with slash '/' to block malicious urls (otherwise e.g. 'foo.com' would allow 'foo.comicly.broken')
 const TRUSTED_UPLOAD_BASE_URL = new URLSearchParams(document.location.search).get('upload_base_url')
-      || 'https://piggy-bucket.s3-us-west-2.amazonaws.com/';
+      || 'https://svanill-vault.s3.us-west-2.amazonaws.com/';
 const ERRORS_QUEUE = [];
 const ENCRYPTED_BOX_FORMAT = new Uint8Array([0]);
 </script>
