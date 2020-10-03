@@ -894,7 +894,7 @@ async function fetchJSON(href, options = {}) {
 }
 
 async function attemptLogin() {
-    if (getValueAt('confirm-secret') !== getValueAt('secret')) {
+    if (!Boolean(getValueAt('username')) && getValueAt('confirm-secret') !== getValueAt('secret')) {
         window.alert('The passwords don\'t match');
     } else {
         toggleOverlay(true);
@@ -943,7 +943,9 @@ function onPageLoaded() {
 
     const isSecretConfirmed = () => getValueAt('confirm-secret') === getValueAt('secret') && getValueAt('secret');
     $('confirm-secret').addEventListener('input', () => { $('login-btn').disabled = !isSecretConfirmed() ; });
-    $('secret'        ).addEventListener('input', () => { $('login-btn').disabled = !isSecretConfirmed() ; });
+    $('secret'        ).addEventListener('input', () => { $('login-btn').disabled = !Boolean(getValueAt('username')) && !isSecretConfirmed(); });
+
+    $('username'      ).addEventListener('input', () => { $('confirm-secret').disabled = Boolean(getValueAt('username')); });
 
     $('login-form').addEventListener('submit', ev => ev.preventDefault() || attemptLogin());
     $('logout-btn').addEventListener('click', () => { document.location.reload(); });
