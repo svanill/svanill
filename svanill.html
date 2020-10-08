@@ -180,19 +180,22 @@ textarea:focus::placeholder {
 }
 
 .actions {
-    text-align: right;
+    width: 214px;
+    flex: 0 1 auto;
+    white-space: nowrap;
 }
 
 .action-bar {
     width: 100%;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
     margin-bottom: 0.5em;
+    flex-wrap: wrap;
 }
 
 button.action {
+    box-sizing: border-box;
+    width: 68px;
     margin-bottom: 0.2em;
 }
 
@@ -202,6 +205,7 @@ button.action {
     text-shadow: 0 0 33px var(--main-bg-color);
     font-size: 1.3em;
     margin: 0 0.2em 0.2em 0;
+    flex: 1 0 auto;
 }
 
 #error-bar {
@@ -309,7 +313,11 @@ a:visited { color: #81c4f8; }
 <main class="main-container" role="main">
 
 <div class="plaintext-container">
-    <p class="action-bar"><label class="title" for="plaintext">Cleartext</label> <button id="download-cleartext" class="action">⬇ download</button></p>
+    <p class="action-bar"><label class="title" for="plaintext">Cleartext</label>
+    <span class="actions">
+    <button id="download-cleartext" class="action" title="download" aria-label="download">⬇</button>
+    </span>
+    </p>
     <textarea id="plaintext" class="change-ciphertext" autocomplete="off" placeholder="Click here to type some text to encrypt"></textarea>
 </div>
 
@@ -317,9 +325,9 @@ a:visited { color: #81c4f8; }
     <p class="action-bar">
     <label class="title" for="ciphertext">Ciphertext</label>
     <span class="actions">
-    <button id="reload-ciphertext" class="external action">⟳ reload</button>
-    <button id="upload-ciphertext" class="external action">⬆ upload</button>
-    <button id="download-ciphertext" class="action"> ⬇ download</button>
+    <button id="reload-ciphertext" class="external action" title="reload" aria-label="reload">⟳</button>
+    <button id="upload-ciphertext" class="external action" title="upload" aria-label="upload">⬆</button>
+    <button id="download-ciphertext" class="action" title="download" aria-label="download">⬇</button>
     </span>
     </p>
     <p id="ciphertext-error-bar" role="alert" aria-atomic="true"></p>
