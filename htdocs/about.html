@@ -139,7 +139,8 @@ h4 {
 <h2>Use cases</h2>
 
 <ul>
-  <li>You don't trust any software without reviewing it yourself, at every update</li>
+  <li>You risk of being in a situation without access to your 2FA device or keys/certificates</li>
+  <li>You want to be able to review every release of this kind of software</li>
   <li>You really need to use someone else's computer (you feel ok to open your data on a browser - possibly incognito mode, no extensions)</li>
   <li>You want to share something privately, passing the password on a different channel</li>
 </ul>
@@ -166,15 +167,19 @@ Everything but the key is prepended to the ciphertext and thus public.
 <br />
 The data must be secure at rest, so the strength of the key is what matters most.
 You should <a href="https://en.wikipedia.org/wiki/Password_strength" target="_blank" noopener noreferrer>use the longest passphrase</a> you are confident to remember (assuming just english letters and digits, it should be at least 14 characters long - around 72 bit of entropy).
+</p>
 
+<h3>Svanill format</h3>
+
+<p>
+The following diagram represents the result of encrypting the text `svanill` using `foobar` as password. Note that this particular password is weak (short and guessable), used just for the sake of example. Every box contains an hexadecimal character (two boxes, one byte).
+<br /><br />
 <img id="diagram" src="./assets/format_diagram_dark.png" alt="encrypted box format" />
 
-<br />
-Here it's encrypted the text `svanill` using `foobar` as password. Note that this particular password is weak (short and guessable), used just for the sake of example.
 <br /><br />
 To decrypt we read the first byte to determine how the rest of the bytes are aligned, and use them to decrypt. If somehow the data got tampered we won't be able to decrypt.
 <br />Since we are not communicating with an external party during decryption there should be no timing attack.<br /><br />
-To protect against a purposefully crafted high iteration number, which would starve the cpu, Svanill won't attempt to decrypt if that number is higher than what we use to encrypt.
+To protect against a purposefully crafted high iteration number, which would starve the cpu, Svanill won't attempt to decrypt if that number is higher than what we configured to encrypt.
 <br /><br />Nothing from decryption is reused for future encryption, to prevent downgrade attacks or blatant compromissions (like reusing the iv).
 
 </p>
@@ -207,7 +212,7 @@ No, but but you should use private browsing nonetheless.
 That's a difficult question. If you don't, you shouldn't use it to navigate the Internet. The highest risks are when you are using an outdated browser and when you're using browser extensions. If you want to be at ease you should use an updated browser and open Svanill from a profile without extensions, in private mode (even moreso if you're using someone else's computer).
 </p>
 
-<h3>Why you think that this kind of software should be open source?</h3>
+<h3>Why do you think that this kind of software should be open source?</h3>
 
 <p>
 Because you should be able to check if the original code or any later update contains malicious operations or bugs, and be able to act accordingly.
@@ -250,7 +255,7 @@ These programs do not really match the goals of Svanill, but they come up anyway
     <h4>Lastpass / 1Password</h4>
     <p>
       Both are closed source and not freely auditable by an independent external auditor.
-      1Password in particular has never had first class support for Linux.
+      1Password in particular has neglected Linux for years.
     </p>
   </li>
   <li>
