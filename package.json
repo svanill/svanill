@@ -8,7 +8,6 @@
   "private": true,
   "devDependencies": {
     "@playwright/test": "^1.22.2",
-    "create-playwright": "latest",
     "jasmine": "^4.0",
     "karma": "^6.0",
     "karma-chrome-launcher": "^3.0",
