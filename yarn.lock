@@ -1538,6 +1538,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@playwright/test@npm:^1.22.2":
+  version: 1.22.2
+  resolution: "@playwright/test@npm:1.22.2"
+  dependencies:
+    "@types/node": "*"
+    playwright-core: 1.22.2
+  bin:
+    playwright: cli.js
+  checksum: 55392a97d920b77374926415e16e649320a9d8243f4ddca09c61827580674ad6f50057c09d5d194212d4ce60abc2cdf5f939ddd87f3670e073e9dd6c418480d5
+  languageName: node
+  linkType: hard
+
 "@sinonjs/commons@npm:^1.6.0, @sinonjs/commons@npm:^1.7.0, @sinonjs/commons@npm:^1.8.3":
   version: 1.8.3
   resolution: "@sinonjs/commons@npm:1.8.3"
@@ -4826,6 +4838,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"playwright-core@npm:1.22.2":
+  version: 1.22.2
+  resolution: "playwright-core@npm:1.22.2"
+  bin:
+    playwright: cli.js
+  checksum: 7381c35359b4338282f73dc902c1c1311e8e7cbf852f445dd6b430ebcb7eafc842b8e512d238fdc0b70d1da2b14046f297b19dac027c6a0a62ff217e70f6a07c
+  languageName: node
+  linkType: hard
+
 "pngjs@npm:^3.3.1":
   version: 3.4.0
   resolution: "pngjs@npm:3.4.0"
@@ -5612,6 +5633,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "svanill@workspace:."
   dependencies:
+    "@playwright/test": ^1.22.2
     jasmine: ^4.0
     karma: ^6.0
     karma-chrome-launcher: ^3.0
