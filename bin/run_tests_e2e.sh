@@ -10,8 +10,8 @@ command -v docker-compose && docker-compose --version
 cd $DIR/..
 ROOT=$PWD
 
-node node_modules/.bin/testcafe --hostname localhost -c 4 -s takeOnFails=true chrome:headless tests/e2e/networkless.test.js
-node node_modules/.bin/testcafe --hostname localhost -c 4 -s takeOnFails=true firefox:headless tests/e2e/networkless.test.js
+yarn playwright test --browser chromium e2e/networkless.spec.mjs
+yarn playwright test --browser firefox e2e/networkless.spec.mjs
 
 # On exit, teardown the docker containers
 trap "docker-compose -f ${ROOT}/tests/e2e/docker-compose.yml down" EXIT
@@ -20,7 +20,7 @@ trap "docker-compose -f ${ROOT}/tests/e2e/docker-compose.yml down" EXIT
 docker-compose -f tests/e2e/docker-compose.yml up -d
 
 docker-compose -f tests/e2e/docker-compose.yml up -d createbuckets
-node node_modules/.bin/testcafe --hostname localhost -c 1 -s takeOnFails=true chrome:headless tests/e2e/network_api.test.js
-docker-compose -f tests/e2e/docker-compose.yml up -d createbuckets
-node node_modules/.bin/testcafe --hostname localhost -c 1 -s takeOnFails=true firefox:headless tests/e2e/network_api.test.js
+yarn playwright test --browser chromium e2e/network_on.spec.mjs
 
+docker-compose -f tests/e2e/docker-compose.yml up -d createbuckets
+yarn playwright test --browser firefox e2e/network_on.spec.mjs

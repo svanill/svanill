@@ -73,7 +73,7 @@ test('When a user who never uploaded anything clicks reload, textareas should be
   await expect(vcp.getCiphertextTextarea()).toBeEmpty();
 });
 
-test.only('When the user click on upload, delete the text and reload, the text is back again', async ({
+test('When the user click on upload, delete the text and reload, the text is back again', async ({
   page,
 }) => {
   const vcp = new VanillaCryptoPage(page);
