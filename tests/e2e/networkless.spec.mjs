@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import { URL } from 'url';
 
 import crypto from 'crypto';
-import VanillaCryptoPage from './page_object2.mjs';
+import VanillaCryptoPage from './page_object.mjs';
 
 /**
  * @param {number} ms how long to wait, in milliseconds
