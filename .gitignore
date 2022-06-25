@@ -1,3 +1,6 @@
 node_modules/
 screenshots/
 .yarn/
+/test-results/
+/playwright-report/
+/playwright/.cache/

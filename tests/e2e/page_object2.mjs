@@ -34,34 +34,23 @@ export default class VanillaCryptoPage {
   getUploadCiphertextButton() {
     return this.page.locator('#upload-ciphertext');
   }
+  isLoginButtonDisabled() {
+    return this.getLoginButton().isDisabled();
+  }
   async login() {
-    await this.getInputSecret().fill('');
-    await this.getInputSecret().type('testpw');
-
-    await this.getInputConfirmSecret().fill('');
-    await this.getInputConfirmSecret().type('testpw');
-
+    await this.getInputSecret().fill('testpw');
+    await this.getInputConfirmSecret().fill('testpw');
     await this.getLoginButton().click();
   }
   async loginExt(username) {
-    await this.getInputSecret().fill('');
-    await this.getInputSecret().type('testpw');
-
-    await this.getInputConfirmSecret().fill('');
-    await this.getInputConfirmSecret().type('testpw');
-
-    await this.getInputUsername().fill('');
-    await this.getInputUsername().type(username || 'test-user');
-
+    await this.getInputSecret().fill('testpw');
+    await this.getInputConfirmSecret().fill('testpw');
+    await this.getInputUsername().fill(username || 'test-user');
     await this.getLoginButton().click();
   }
   async loginUsingKeyboard() {
-    await this.getInputSecret().fill('');
-    await this.getInputSecret().type('testpw');
-
-    await this.getInputConfirmSecret().fill('');
-    await this.getInputConfirmSecret().type('testpw');
-
+    await this.getInputSecret().fill('testpw');
+    await this.getInputConfirmSecret().fill('testpw');
     await this.getLoginButton().press('Enter');
   }
   getCleartextTextarea() {
