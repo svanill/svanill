@@ -16,11 +16,10 @@
     "karma-jasmine": "^5.0",
     "karma-mocha-reporter": "^2.2.5",
     "karma-sinon": "^1.0.5",
-    "sinon": "^14.0",
-    "testcafe": "^1.19.0"
+    "sinon": "^14.0"
   },
   "scripts": {
     "test-unit": "node_modules/.bin/karma start",
-    "test-e2e": "bin/run_tests_e2e.sh"
+    "test-e2e": "yarn playwright test"
   }
 }
