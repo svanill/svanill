@@ -13,7 +13,13 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: lts/*
+          node-version: 17.9.0
+
+      - name: Versions info
+        run: |
+          node --version
+          npm --version
+          npx --version
 
       - name: Get npm cache directory
         id: npm-cache-dir
@@ -46,7 +52,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: lts/*
+          node-version: 17.9.0
 
       - name: Get npm cache directory
         id: npm-cache-dir
@@ -89,7 +95,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: lts/*
+          node-version: 17.9.0
 
       - name: Get npm cache directory
         id: npm-cache-dir
