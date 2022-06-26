@@ -11,13 +11,9 @@ services:
         entrypoint: minio server /data
         expose:
             - "9000"
-        ports:
-            - "9000:9000"
     web:
         network_mode: host
         image: ghcr.io/riquito/svanill-vault-server:latest
-        ports:
-            - "127.0.0.1:5000:5000"
         depends_on:
             - s3_like
             - createbuckets
