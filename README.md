@@ -25,10 +25,10 @@ How to run the tests
 
 ```
 # unit tests
-yarn test-unit
+npm test-unit
 
 # e2e tests (requires `docker-compose`)
-yarn test-e2e
+npm test-e2e
 ```
 
 Goals
