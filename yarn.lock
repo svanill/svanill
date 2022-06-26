@@ -33,10 +33,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"playwright@npm:^1.22.2":
+  version: 1.22.2
+  resolution: "playwright@npm:1.22.2"
+  dependencies:
+    playwright-core: 1.22.2
+  bin:
+    playwright: cli.js
+  checksum: e9e9c4a959d27b6bea3144a0cb19b15124226fb0017e65978fe781fc79129793028ec68dbe9252674120b9a0079bd0e4d17bd2e1258e66032d5ec5427f35cb6f
+  languageName: node
+  linkType: hard
+
 "svanill@workspace:.":
   version: 0.0.0-use.local
   resolution: "svanill@workspace:."
   dependencies:
     "@playwright/test": ^1.22.2
+    playwright: ^1.22.2
   languageName: unknown
   linkType: soft

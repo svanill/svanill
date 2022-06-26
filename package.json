@@ -7,10 +7,12 @@
   "license": "AGPL-3.0",
   "private": true,
   "devDependencies": {
-    "@playwright/test": "^1.22.2"
+    "@playwright/test": "^1.22.2",
+    "playwright": "^1.22.2"
   },
   "scripts": {
     "test-unit": "yarn playwright test tests/unit/",
     "test-e2e": "./bin/run_tests_e2e.sh"
-  }
+  },
+  "packageManager": "yarn@3.2.1"
 }
