@@ -7,7 +7,7 @@
   "license": "AGPL-3.0",
   "private": true,
   "scripts": {
-    "test-unit": "yarn playwright test tests/unit/",
+    "test-unit": "npx playwright test tests/unit/",
     "test-e2e": "./bin/run_tests_e2e.sh"
   },
   "devDependencies": {
