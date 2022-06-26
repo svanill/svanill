@@ -7,19 +7,10 @@
   "license": "AGPL-3.0",
   "private": true,
   "devDependencies": {
-    "@playwright/test": "^1.22.2",
-    "jasmine": "^4.0",
-    "karma": "^6.0",
-    "karma-chrome-launcher": "^3.0",
-    "karma-firefox-launcher": "^2.0",
-    "karma-generic-preprocessor": "^1.1.0",
-    "karma-jasmine": "^5.0",
-    "karma-mocha-reporter": "^2.2.5",
-    "karma-sinon": "^1.0.5",
-    "sinon": "^14.0"
+    "@playwright/test": "^1.22.2"
   },
   "scripts": {
-    "test-unit": "node_modules/.bin/karma start",
+    "test-unit": "yarn playwright test tests/unit/",
     "test-e2e": "./bin/run_tests_e2e.sh"
   }
 }
