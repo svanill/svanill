@@ -100,5 +100,5 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v1
       with:
-        name: screenshots
-        path: screenshots
+        name: test-results
+        path: test-results
