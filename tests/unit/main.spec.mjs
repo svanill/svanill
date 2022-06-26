@@ -736,3 +736,79 @@ test.describe('encryptor and decryptor uses the same format', () => {
     expect(decryptedPlaintext).toBe(plaintext);
   });
 });
+
+test.describe('willRequestEncryption', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.evaluate(() => {
+      // @ts-ignore
+      window._orig_PBKDF2_ITERATIONS = window.PBKDF2_ITERATIONS;
+
+      // @ts-ignore
+      document.getElementById('secret').value = 'such secret';
+
+      // @ts-ignore
+      window._orig_mockGetRandomValues = window.crypto.getRandomValues;
+
+      // This function can only work in browsers, we will pass it serialized
+      // when evaluating tests
+      // @ts-ignore
+      window.mockGetRandomValues = (values) => {
+        return function (typedArray) {
+          if (!(typedArray instanceof Uint8Array)) {
+            throw new Error('getRandomValues mock must receive a typedArray');
+          }
+          if (typedArray.length !== values.length) {
+            throw new Error(
+              `getRandomValues mock, wrong typedArray length (got ${typedArray.length}, expected ${values.length})`
+            );
+          }
+
+          typedArray.set(values);
+          return typedArray;
+        };
+      };
+    });
+  });
+
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => {
+      // @ts-ignore
+      window.PBKDF2_ITERATIONS = window._orig_PBKDF2_ITERATIONS;
+      // @ts-ignore
+      window.crypto.getRandomValues = window._orig_mockGetRandomValues;
+      // @ts-ignore
+      document.getElementById('secret').value = '';
+    });
+  });
+
+  test('return an empty string if the plaintext is empty', async ({ page }) => {
+    const t = async () => {
+      // @ts-ignore
+      return await willRequestEncryption('');
+    };
+    const encryptedText = await page.evaluate(t);
+    expect(encryptedText).toEqual('');
+  });
+
+  test('will call willEncryptPlaintext with the proper arguments', async ({
+    page,
+  }) => {
+    const t = async () => {
+      window.crypto.getRandomValues = function (typedArray) {
+        // @ts-ignore
+        return mockGetRandomValues(Array(typedArray.length).fill(1))(
+          typedArray
+        );
+      };
+
+      // @ts-ignore
+      return await willRequestEncryption('some text');
+    };
+
+    const encryptedText = await page.evaluate(t);
+
+    expect(encryptedText).toEqual(
+      '00000000020101010101010101010101010101010101010101010101010101010166ce09ab6fb6e43256026a3004631308c50f738c6299099a6b'
+    );
+  });
+});
