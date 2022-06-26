@@ -229,7 +229,7 @@ test.describe('getRandomLowercaseString', () => {
 });
 
 test.describe('willGenerateKey', () => {
-  test.only('generates a non-extractable key', async ({ page }) => {
+  test('generates a non-extractable key', async ({ page }) => {
     const t = async () => {
       // @ts-ignore
       const key = await willGenerateKey(
@@ -272,5 +272,226 @@ test.describe('willGenerateKey', () => {
     };
 
     await page.evaluate(t);
+  });
+});
+
+test.describe('willEncryptPlaintext', () => {
+  const plaintext = 'some text';
+  const secret = 'such secret';
+  // later we make it a Uint8Array
+  const salt = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  const iterations = 2;
+  // later we make it a Uint8Array
+  const iv = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+  const bagOfArgs = [plaintext, secret, salt, iterations, iv];
+
+  test('produces the same result if the parameters did not change', async ({
+    page,
+  }) => {
+    const t = async ([plaintext, secret, salt, iterations, iv]) => {
+      // @ts-ignore
+      const result1 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      // @ts-ignore
+      const result2 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      return [result1, result2];
+    };
+
+    // @ts-ignore
+    const [result1, result2] = await page.evaluate(t, bagOfArgs);
+    expect(result1).toBe(result2);
+  });
+
+  test('produces different results if the salt has changed', async ({
+    page,
+  }) => {
+    const t = async ([plaintext, secret, salt, iterations, iv]) => {
+      // @ts-ignore
+      const result1 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      // @ts-ignore
+      const result2 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array([1, 1, 1]),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      return [result1, result2];
+    };
+
+    // @ts-ignore
+    const [result1, result2] = await page.evaluate(t, bagOfArgs);
+    expect(result1).not.toBe(result2);
+  });
+
+  test('produces different results if the iterations has changed', async ({
+    page,
+  }) => {
+    const t = async ([plaintext, secret, salt, iterations, iv]) => {
+      // @ts-ignore
+      const result1 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      // @ts-ignore
+      const result2 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations + 1,
+        new Uint8Array(iv)
+      );
+      return [result1, result2];
+    };
+
+    // @ts-ignore
+    const [result1, result2] = await page.evaluate(t, bagOfArgs);
+    expect(result1).not.toBe(result2);
+  });
+
+  test('produces different results if the plaintext has changed', async ({
+    page,
+  }) => {
+    const t = async ([plaintext, secret, salt, iterations, iv]) => {
+      // @ts-ignore
+      const result1 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      // @ts-ignore
+      const result2 = await willEncryptPlaintext(
+        'different plaintext',
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      return [result1, result2];
+    };
+
+    // @ts-ignore
+    const [result1, result2] = await page.evaluate(t, bagOfArgs);
+    expect(result1).not.toBe(result2);
+  });
+
+  test('produces different results if the secret has changed', async ({
+    page,
+  }) => {
+    const t = async ([plaintext, secret, salt, iterations, iv]) => {
+      // @ts-ignore
+      const result1 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      // @ts-ignore
+      const result2 = await willEncryptPlaintext(
+        plaintext,
+        'different secret',
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+
+      return [result1, result2];
+    };
+
+    // @ts-ignore
+    const [result1, result2] = await page.evaluate(t, bagOfArgs);
+    expect(result1).not.toBe(result2);
+  });
+
+  test('produces different results if the iv has changed', async ({ page }) => {
+    const t = async ([plaintext, secret, salt, iterations, iv]) => {
+      const b_iv_1 = new Uint8Array(16);
+      const b_iv_2 = new Uint8Array(16);
+      b_iv_2.set([1, 2, 3]);
+
+      // @ts-ignore
+      const result1 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        b_iv_1
+      );
+
+      // @ts-ignore
+      const result2 = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        b_iv_2
+      );
+
+      return [result1, result2];
+    };
+
+    // @ts-ignore
+    const [result1, result2] = await page.evaluate(t, bagOfArgs);
+    expect(result1).not.toBe(result2);
+  });
+
+  test('produces output following a specific format', async ({ page }) => {
+    const t = async ([plaintext, secret, salt, iterations, iv]) => {
+      // @ts-ignore
+      return await willEncryptPlaintext(
+        plaintext,
+        secret,
+        new Uint8Array(salt),
+        iterations,
+        new Uint8Array(iv)
+      );
+    };
+
+    // @ts-ignore
+    const result = await page.evaluate(t, bagOfArgs);
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(66);
+
+    const expectedResult = [
+      '00', // format version
+      '00000002', // iterations
+      '000102030405060708090a0b0c0d0e0f', // salt
+      '000102030405060708090a0b', // iv
+      'ed5fe4b042d792907da28727bf418c3f8ceb8d0ea4370fe1c6', // cyphertext
+    ].join('');
+
+    expect(result).toBe(expectedResult);
   });
 });
