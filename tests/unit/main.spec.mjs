@@ -227,3 +227,50 @@ test.describe('getRandomLowercaseString', () => {
     expect(result).toEqual(expected);
   });
 });
+
+test.describe('willGenerateKey', () => {
+  test.only('generates a non-extractable key', async ({ page }) => {
+    const t = async () => {
+      // @ts-ignore
+      const key = await willGenerateKey(
+        'such secret',
+        new Uint8Array([0, 1, 2, 3]),
+        2
+      );
+
+      if (key.extractable !== false) {
+        throw new Error('Key should not be extractable!');
+      }
+
+      if (JSON.stringify(key.usages) !== '["encrypt","decrypt"]') {
+        throw new Error(`Expected ['encrypt', 'decrypt'], got ${key.usages}`);
+      }
+    };
+
+    await page.evaluate(t);
+  });
+
+  test('throw GenerateKeyError if iterations is not a number', async ({
+    page,
+  }) => {
+    const t = async () => {
+      try {
+        // @ts-ignore
+        const key = await willGenerateKey(
+          'such secret',
+          new Uint8Array([0, 1, 2, 3]),
+          'not a number'
+        );
+
+        throw new Error('Expected exception');
+      } catch (e) {
+        // @ts-ignore
+        if (!(e instanceof GenerateKeyError)) {
+          throw e;
+        }
+      }
+    };
+
+    await page.evaluate(t);
+  });
+});
