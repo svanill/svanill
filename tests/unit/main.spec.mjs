@@ -700,3 +700,39 @@ test.describe('willDecryptCiphertext', () => {
     await page.evaluate(t);
   });
 });
+
+test.describe('encryptor and decryptor uses the same format', () => {
+  test('can decrypt encrypted data', async ({ page }) => {
+    const t = async ([plaintext]) => {
+      // feeding willEncryptPlaintext to willDecryptCiphertext ensure that when we
+      // tested the two functions separatedly we didn't test incompatible formats.
+
+      const secret = 'such secret';
+      const b_salt = new Uint8Array(16);
+      const iterations = 2;
+      const b_iv = new Uint8Array(12);
+
+      // @ts-ignore
+      const encryptedBox = await willEncryptPlaintext(
+        plaintext,
+        secret,
+        b_salt,
+        iterations,
+        b_iv
+      );
+
+      // @ts-ignore
+      const decryptedPlaintext = await willDecryptCiphertext(
+        encryptedBox,
+        secret
+      );
+
+      return decryptedPlaintext;
+    };
+
+    const plaintext = 'such text';
+    // @ts-ignore
+    const decryptedPlaintext = await page.evaluate(t, [plaintext]);
+    expect(decryptedPlaintext).toBe(plaintext);
+  });
+});
