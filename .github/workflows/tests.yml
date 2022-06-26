@@ -31,7 +31,9 @@ jobs:
       - name: Install dependencies
         id: npm-install
         if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install
+        run: |
+          npm install
+          npx playwright install
 
   unit-tests:
     needs: setup
@@ -62,7 +64,9 @@ jobs:
       - name: Install dependencies
         id: npm-install
         if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install
+        run: |
+          npm install
+          npx playwright install
 
       - name: Run unit tests
         run: npm run test-unit
@@ -103,7 +107,9 @@ jobs:
       - name: Install dependencies
         id: npm-install
         if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install
+        run: |
+          npm install
+          npx playwright install
 
       - name: Run e2e networkless tests
         run: npm run test-e2e
