@@ -106,7 +106,7 @@ jobs:
         run: npm install
 
       - name: Run e2e networkless tests
-        run: npm test-e2e
+        run: npm run test-e2e
 
       - name: Display docker logs
         if: failure()
