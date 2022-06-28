@@ -1,6 +1,7 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 import { URL } from 'url';
+import fs from 'fs';
 
 import crypto from 'crypto';
 import VanillaCryptoPage from './page_object.mjs';
@@ -214,6 +215,46 @@ test('Any update to the ciphertext must update the plaintext', async ({
   );
 });
 
-test('The plaintext can be downloaded', async ({ page }) => {});
+test('The plaintext can be downloaded', async ({ page }) => {
+  let vcp = new VanillaCryptoPage(page);
 
-test('The ciphertext can be downloaded', async ({ page }) => {});
+  await vcp.login();
+
+  const plaintext = 'foobar';
+
+  await vcp.getCleartextTextarea().type(plaintext);
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    vcp.getDownloadCleartextButton().click(),
+  ]);
+
+  // Wait for the download process to complete
+  const path = await download.path();
+  const content = fs.readFileSync(path, { encoding: 'utf8' });
+
+  expect(content).toEqual(plaintext);
+});
+
+test('The ciphertext can be downloaded', async ({ page }) => {
+  let vcp = new VanillaCryptoPage(page);
+
+  await vcp.login();
+
+  const cleartext = 'foobar';
+
+  // use `delay` to ensure that we have the time to encrypt something
+  await vcp.getCleartextTextarea().type(cleartext, { delay: 100 });
+  const ciphertext = await vcp.getCiphertextTextarea().inputValue();
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    vcp.getDownloadCiphertextButton().click(),
+  ]);
+
+  // Wait for the download process to complete
+  const path = await download.path();
+  const content = fs.readFileSync(path, { encoding: 'utf8' });
+
+  expect(content).toEqual(ciphertext);
+});
