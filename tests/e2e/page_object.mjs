@@ -62,4 +62,10 @@ export default class VanillaCryptoPage {
   getCiphertextErrorBar() {
     return this.page.locator('#ciphertext-error-bar');
   }
+  getDownloadCleartextButton() {
+    return this.page.locator('#download-cleartext');
+  }
+  getDownloadCiphertextButton() {
+    return this.page.locator('#download-ciphertext');
+  }
 }
