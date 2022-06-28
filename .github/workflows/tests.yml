@@ -29,17 +29,12 @@ jobs:
       - uses: actions/cache@v3
         id: npm-cache
         with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          path: |
+            ${{ steps.npm-cache-dir.outputs.dir }}
+            ~/.cache/ms-playwright
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        id: npm-install
-        if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: |
-          npm install
-          npx playwright install
 
   unit-tests:
     needs: setup
@@ -62,17 +57,19 @@ jobs:
       - uses: actions/cache@v3
         id: npm-cache
         with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          path: |
+            ${{ steps.npm-cache-dir.outputs.dir }}
+            ~/.cache/ms-playwright
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         id: npm-install
-        if: steps.npm-cache.outputs.cache-hit != 'true'
         run: |
           npm install
-          npx playwright install
+          npx playwright install chromium
+          npx playwright install firefox
 
       - name: Run unit tests
         run: npm run test-unit
@@ -105,17 +102,17 @@ jobs:
       - uses: actions/cache@v3
         id: npm-cache
         with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          path: |
+            ${{ steps.npm-cache-dir.outputs.dir }}
+            ~/.cache/ms-playwright
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         id: npm-install
-        if: steps.npm-cache.outputs.cache-hit != 'true'
         run: |
           npm install
-          npx playwright install
 
       - name: Run e2e networkless tests
         run: npm run test-e2e
