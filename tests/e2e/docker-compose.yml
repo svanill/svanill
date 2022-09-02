@@ -13,7 +13,7 @@ services:
             - "9000"
     web:
         network_mode: host
-        image: ghcr.io/riquito/svanill-vault-server:latest
+        image: ghcr.io/svanill/svanill-vault-server:latest
         depends_on:
             - s3_like
             - createbuckets
