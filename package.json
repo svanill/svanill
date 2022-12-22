@@ -12,6 +12,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.28.0",
-    "playwright": "^1.28.0"
+    "playwright": "^1.29.1"
   }
 }
