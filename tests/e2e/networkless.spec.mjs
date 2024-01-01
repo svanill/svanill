@@ -3,7 +3,6 @@ import { test, expect } from '@playwright/test';
 import { URL } from 'url';
 import fs from 'fs';
 
-import crypto from 'crypto';
 import VanillaCryptoPage from './page_object.mjs';
 
 /**

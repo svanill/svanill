@@ -19,8 +19,10 @@ trap "docker-compose -f ${ROOT}/tests/e2e/docker-compose.yml down" EXIT
 # Setup the docker containers
 docker-compose -f tests/e2e/docker-compose.yml up -d
 
-docker-compose -f tests/e2e/docker-compose.yml up -d createbuckets
+# reset (empty) s3 (minio) so tests run from a blank state
+docker-compose -f tests/e2e/docker-compose.yml up --force-recreate -d createbuckets
 npx playwright test --browser chromium e2e/network_on.spec.mjs
 
-docker-compose -f tests/e2e/docker-compose.yml up -d createbuckets
+# reset (empty) s3 (minio) so tests run from a blank state
+docker-compose -f tests/e2e/docker-compose.yml up --force-recreate  -d createbuckets
 npx playwright test --browser firefox e2e/network_on.spec.mjs
