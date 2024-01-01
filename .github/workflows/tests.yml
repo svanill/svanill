@@ -113,6 +113,8 @@ jobs:
         id: npm-install
         run: |
           npm install
+          npx playwright install chromium
+          npx playwright install firefox
 
       - name: Run e2e networkless tests
         run: npm run test-e2e
