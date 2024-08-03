@@ -121,7 +121,7 @@ jobs:
 
       - name: Display docker logs
         if: failure()
-        run: docker-compose -f tests/e2e/docker-compose.yml logs
+        run: docker compose -f tests/e2e/docker-compose.yml logs
 
       - name: Archive test artifacts
         if: failure()
