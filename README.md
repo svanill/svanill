@@ -27,7 +27,7 @@ How to run the tests
 # unit tests
 npm test-unit
 
-# e2e tests (requires `docker-compose`)
+# e2e tests (requires `docker`)
 npm test-e2e
 ```
 
