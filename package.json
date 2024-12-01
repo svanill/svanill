@@ -11,7 +11,7 @@
     "test-e2e": "./bin/run_tests_e2e.sh"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.2",
+    "@playwright/test": "^1.49.0",
     "playwright": "^1.40.1"
   }
 }
