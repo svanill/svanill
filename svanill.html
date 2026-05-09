@@ -691,17 +691,11 @@ async function onUploadCiphertextButtonClicked(ev) {
 
     try {
         const ciphertext = getValueAt('ciphertext'); // Make a copy to prevent changes
-        const { uploadUrl, uploadFormData, retrieveUrl } = await willRequestUploadUrl(filename);
+        const { uploadUrl, uploadFormData } = await willRequestUploadUrl(filename);
         if ((uploadUrl + '/').slice(0, TRUSTED_UPLOAD_BASE_URL.length) !== TRUSTED_UPLOAD_BASE_URL) {
             throw new UploadCiphertextError('The server proposed to upload the file to an untrusted url!');
         }
         await willUploadCiphertext(uploadUrl, uploadFormData, ciphertext);
-
-        const uploadedContent = await willDownload(retrieveUrl);
-        if (uploadedContent !== ciphertext) {
-            throw new UploadCiphertextError('The uploaded file does not match the original file');
-        }
-        console.log('Cool, the file was uploaded correctly!');
     } catch (e) {
         if (e instanceof UploadCiphertextError || e instanceof CannotRequestUploadUrlError) {
             pushErrorToDisplayQueue(e);
@@ -772,6 +766,8 @@ async function willUploadCiphertext(uploadUrl, uploadFormData, ciphertext) {
             formData.append(key, value);
         }
         const blob = new Blob([ciphertext], { type: "text/plain"});
+        const hashBuffer = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+        formData.append('x-amz-checksum-sha256', btoa(String.fromCharCode(...new Uint8Array(hashBuffer))));
         formData.append("file", blob);
 
         const response = await fetchOrThrow(uploadUrl, {
@@ -779,9 +775,6 @@ async function willUploadCiphertext(uploadUrl, uploadFormData, ciphertext) {
                 'Cache-Control': 'None',
                 'Expect': '100-continue',
                 'Content-Encoding': 'utf-8',
-                // XXX ... no md5 in crypto subtle, so we can't rely on it.
-                // We'll have to download the file and verify his content later
-                // 'Content-MD5': 'application/json',
             },
             method: 'POST',
             body: formData,
